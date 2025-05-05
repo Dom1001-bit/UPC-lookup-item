@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPC Item Lookup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles if needed */
+        body {
+            font-family: 'Inter', sans-serif; /* Use Inter font */
+        }
+        /* Add a subtle animation for the loading spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s linear infinite;
+        }
+        /* Style for the image container */
+        #imageContainer {
+            min-height: 150px; /* Ensure space even before image loads */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem; /* Add some space below the image */
+            border: 1px solid #e5e7eb; /* Optional border */
+            border-radius: 0.375rem; /* Rounded corners */
+            overflow: hidden; /* Ensure image stays within bounds */
+            background-color: #f9fafb; /* Light background */
+        }
+        #itemImage {
+            max-width: 100%;
+            max-height: 200px; /* Limit image height */
+            height: auto; /* Maintain aspect ratio */
+            object-fit: contain; /* Fit image within container without stretching */
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Item Lookup by UPC</h1>
+
+        <div class="mb-4">
+            <label for="upcInput" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
+            <input type="text" id="upcInput" name="upc" placeholder="Scan or type UPC code" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6">
+            Lookup Item
+        </button>
+
+        <div id="loadingIndicator" class="hidden flex justify-center items-center mb-4">
+            <div class="spinner"></div>
+            <span class="ml-3 text-gray-600">Looking up item...</span>
+        </div>
+
+        <div id="results" class="hidden">
+             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
+
+             <div id="imageContainer">
+                 <img id="itemImage" src="https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC" alt="Item Image" class="hidden" onerror="this.onerror=null; this.src='https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image'; this.classList.remove('hidden');">
+             </div>
+
+             <div class="space-y-3">
+                 <p><strong class="text-gray-600 w-20 inline-block">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
+                 <p><strong class="text-gray-600 w-20 inline-block">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
+                 <p><strong class="text-gray-600 w-20 inline-block">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
+                 <p><strong class="text-gray-600 w-20 inline-block">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
+                 <p><strong class="text-gray-600 w-20 inline-block">Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p>
+                 <p><strong class="text-gray-600 w-20 inline-block">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p> </div>
+        </div>
+
+        <div id="messageArea" class="mt-4 text-center"></div>
+
+    </div>
+
+    <script>
+        // --- Configuration ---
+        // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdQNy5MCABcrjDYoOoIEbL79rCTCYfEtEGPKyIkh68Uhtfe8jyA6jTOOvWW3z1rCCE/exec';
+        const PLACEHOLDER_IMAGE = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC';
+        // --- End Configuration ---
+
+        // --- DOM Element References ---
+        const upcInput = document.getElementById('upcInput');
+        const lookupButton = document.getElementById('lookupButton');
+        const resultsDiv = document.getElementById('results');
+        const messageArea = document.getElementById('messageArea');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const itemImage = document.getElementById('itemImage'); // Get image element
+        const imageContainer = document.getElementById('imageContainer'); // Container for better control
+
+        // --- Element References for Data Display ---
+        const itemNameSpan = document.getElementById('itemName');
+        const itemSkuSpan = document.getElementById('itemSku');
+        const itemBrandSpan = document.getElementById('itemBrand');
+        const itemStocksSpan = document.getElementById('itemStocks');
+        const itemPriceSpan = document.getElementById('itemPrice');
+        const itemMsrpSpan = document.getElementById('itemMsrp'); // Use MSRP ID
+
+        /**
+         * Displays the fetched item data in the HTML.
+         * @param {object} data - The data object received from the Apps Script.
+         * Expected keys: itemName, sku, brand, stocks, price, msrp, imageUrl.
+         */
+        function displayResults(data) {
+            // Display text data, providing 'N/A' as fallback
+            itemNameSpan.textContent = data.itemName || 'N/A';
+            itemSkuSpan.textContent = data.sku || 'N/A';
+            itemBrandSpan.textContent = data.brand || 'N/A';
+            // Handle potential numeric 0 values correctly
+            itemStocksSpan.textContent = data.stocks !== undefined && data.stocks !== null ? data.stocks : 'N/A';
+            itemPriceSpan.textContent = data.price !== undefined && data.price !== null ? data.price : 'N/A';
+            itemMsrpSpan.textContent = data.msrp !== undefined && data.msrp !== null ? data.msrp : 'N/A'; // Use data.msrp
+
+            // Display image
+            if (data.imageUrl) {
+                itemImage.src = data.imageUrl;
+                itemImage.alt = data.itemName || 'Item Image'; // Set descriptive alt text
+                itemImage.classList.remove('hidden'); // Show the image element
+            } else {
+                // If no image URL provided, show 'No Image' placeholder
+                itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image';
+                itemImage.alt = 'No image available';
+                itemImage.classList.remove('hidden'); // Show the placeholder image
+            }
+
+            resultsDiv.classList.remove('hidden'); // Show the whole results section
+        }
+
+        /**
+         * Displays status messages (e.g., errors, item not found) in the message area.
+         * @param {string} message - The message text to display.
+         * @param {boolean} [isError=false] - If true, styles the message as an error.
+         */
+        function showMessage(message, isError = false) {
+            messageArea.textContent = message;
+            // Apply appropriate Tailwind classes for styling
+            messageArea.className = `mt-4 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100' : 'text-yellow-700 bg-yellow-100'}`;
+        }
+
+        /**
+         * Clears previous results, messages, and resets the UI to its initial state.
+         */
+        function clearOutput() {
+            resultsDiv.classList.add('hidden'); // Hide results section
+            messageArea.textContent = ''; // Clear message text
+            messageArea.className = 'mt-4 text-center'; // Reset message area class
+
+            // Clear previous text data
+            itemNameSpan.textContent = '';
+            itemSkuSpan.textContent = '';
+            itemBrandSpan.textContent = '';
+            itemStocksSpan.textContent = '';
+            itemPriceSpan.textContent = '';
+            itemMsrpSpan.textContent = ''; // Clear MSRP
+
+            // Reset image to initial placeholder and ensure it's visible
+            itemImage.src = PLACEHOLDER_IMAGE;
+            itemImage.alt = 'Item Image';
+            itemImage.classList.remove('hidden');
+        }
+
+        /**
+         * Handles the item lookup process when the button is clicked.
+         */
+        async function handleLookup() {
+            const upc = upcInput.value.trim(); // Get and trim UPC input
+            if (!upc) {
+                showMessage('Please enter a UPC code.', true);
+                return; // Exit if no UPC is entered
+            }
+
+            // Check if the script URL has been configured
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                 showMessage('Error: Google Apps Script URL is not configured in the HTML.', true);
+                 return; // Exit if URL is missing
+            }
+
+            clearOutput(); // Clear previous results before starting new lookup
+            loadingIndicator.classList.remove('hidden'); // Show loading spinner
+            lookupButton.disabled = true; // Disable button during lookup
+            itemImage.classList.add('hidden'); // Hide image area during loading
+
+            try {
+                // Construct the full URL for the Apps Script web app, encoding the UPC
+                const lookupUrl = `${SCRIPT_URL}?upc=${encodeURIComponent(upc)}`;
+
+                // Fetch data from the Google Apps Script Web App using async/await
+                const response = await fetch(lookupUrl);
+
+                // Check if the network request was successful
+                if (!response.ok) {
+                     // Try to get a more specific error message from the response body
+                    let errorText = `Network response was not ok (status: ${response.status})`;
+                    try {
+                        const errorData = await response.json(); // Assume error details might be JSON
+                        if (errorData && errorData.message) {
+                            errorText += `: ${errorData.message}`;
+                        }
+                    } catch (e) { /* Ignore if response body isn't JSON */ }
+                    throw new Error(errorText); // Throw an error to be caught below
+                }
+
+                // Parse the JSON response from the Apps Script
+                const result = await response.json();
+
+                // Process the response based on the status returned by the script
+                if (result.status === 'success' && result.data) {
+                    displayResults(result.data); // Display the found item data
+                } else if (result.status === 'not_found') {
+                    showMessage(`Item with UPC ${upc} not found.`);
+                    itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Not+Found'; // Show 'Not Found' placeholder
+                    itemImage.classList.remove('hidden');
+                } else {
+                    // Handle other errors reported by the script (e.g., script errors)
+                    showMessage(result.message || 'An unknown error occurred during lookup.', true);
+                    itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Error'; // Show 'Error' placeholder
+                    itemImage.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                // Catch network errors or errors thrown during response processing
+                console.error('Lookup Error:', error); // Log the full error to the console
+                showMessage(`Failed to fetch data. Error: ${error.message}`, true); // Show user-friendly error
+                itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Error'; // Show 'Error' placeholder
+                itemImage.classList.remove('hidden');
+            } finally {
+                // This block always runs, whether the try succeeded or failed
+                loadingIndicator.classList.add('hidden'); // Hide loading spinner
+                lookupButton.disabled = false; // Re-enable the lookup button
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Add event listener for the lookup button click
+        lookupButton.addEventListener('click', handleLookup);
+
+        // Add event listener to allow pressing Enter in the input field to trigger lookup
+        upcInput.addEventListener('keypress', (event) => {
+            // Check if the key pressed was 'Enter'
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission behavior (if applicable)
+                handleLookup(); // Trigger the same lookup function as the button click
+            }
+        });
+
+        // --- Initial Setup ---
+
+        // Call clearOutput on initial page load to set the placeholder image correctly
+        clearOutput();
+
+    </script>
+
+</body>
+</html>
