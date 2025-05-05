@@ -9,6 +9,9 @@
         /* Custom styles if needed */
         body {
             font-family: 'Inter', sans-serif; /* Use Inter font */
+            display: flex;
+            flex-direction: column; /* Stack main content and footer */
+            min-height: 100vh; /* Ensure body takes full viewport height */
         }
         /* Add a subtle animation for the loading spinner */
         @keyframes spin {
@@ -40,51 +43,63 @@
             height: auto; /* Maintain aspect ratio */
             object-fit: contain; /* Fit image within container without stretching */
         }
+        /* Ensure main content area takes available space */
+        .main-content {
+            flex-grow: 1; /* Allow main content to grow */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-100 p-4">
 
-    <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Item Lookup by UPC</h1>
+    <div class="main-content w-full">
+        <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
+            <div class="flex justify-center mb-4">
+                 <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-16 w-auto rounded-md" onerror="this.style.display='none'"> </div>
 
-        <div class="mb-4">
-            <label for="upcInput" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
-            <input type="text" id="upcInput" name="upc" placeholder="Scan or type UPC code" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-        </div>
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Item Lookup by UPC</h1>
 
-        <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6">
-            Lookup Item
-        </button>
+            <div class="mb-4">
+                <label for="upcInput" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
+                <input type="text" id="upcInput" name="upc" placeholder="Scan or type UPC code" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
 
-        <div id="loadingIndicator" class="hidden flex justify-center items-center mb-4">
-            <div class="spinner"></div>
-            <span class="ml-3 text-gray-600">Looking up item...</span>
-        </div>
+            <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6">
+                Lookup Item
+            </button>
 
-        <div id="results" class="hidden">
-             <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
+            <div id="loadingIndicator" class="hidden flex justify-center items-center mb-4">
+                <div class="spinner"></div>
+                <span class="ml-3 text-gray-600">Looking up item...</span>
+            </div>
 
-             <div id="imageContainer">
-                 <img id="itemImage" src="https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC" alt="Item Image" class="hidden"
-                      onerror="console.error('Image failed to load. URL:', this.src); this.src='https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image'; this.alt='No image available'; this.classList.remove('hidden');">
-             </div>
+            <div id="results" class="hidden">
+                 <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
 
-             <div class="space-y-3">
-                 <p><strong class="text-gray-600 w-20 inline-block">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
-                 <p><strong class="text-gray-600 w-20 inline-block">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
-                 <p><strong class="text-gray-600 w-20 inline-block">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
-                 <p><strong class="text-gray-600 w-20 inline-block">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
-                 <p><strong class="text-gray-600 w-20 inline-block">Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p>
-                 <p><strong class="text-gray-600 w-20 inline-block">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
-             </div>
-        </div>
+                 <div id="imageContainer">
+                     <img id="itemImage" src="https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC" alt="Item Image" class="hidden"
+                          onerror="console.error('Image failed to load. URL:', this.src); this.src='https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image'; this.alt='No image available'; this.classList.remove('hidden');">
+                 </div>
 
-        <div id="messageArea" class="mt-4 text-center"></div>
+                 <div class="space-y-3">
+                     <p><strong class="text-gray-600 w-20 inline-block">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 w-20 inline-block">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 w-20 inline-block">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 w-20 inline-block">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 w-20 inline-block">Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 w-20 inline-block">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
+                 </div>
+            </div>
 
-    </div>
+            <div id="messageArea" class="mt-4 text-center"></div>
+
+        </div> </div> <footer class="text-center text-gray-500 text-sm mt-8 py-4"> Created and Powered by Dom B.
+    </footer>
 
     <script>
         // --- Configuration ---
