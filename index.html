@@ -68,7 +68,8 @@
              <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
 
              <div id="imageContainer">
-                 <img id="itemImage" src="https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC" alt="Item Image" class="hidden" onerror="this.onerror=null; this.src='https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image'; this.classList.remove('hidden');">
+                 <img id="itemImage" src="https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC" alt="Item Image" class="hidden"
+                      onerror="console.error('Image failed to load. URL:', this.src); this.src='https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image'; this.alt='No image available'; this.classList.remove('hidden');">
              </div>
 
              <div class="space-y-3">
@@ -77,7 +78,8 @@
                  <p><strong class="text-gray-600 w-20 inline-block">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
                  <p><strong class="text-gray-600 w-20 inline-block">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
                  <p><strong class="text-gray-600 w-20 inline-block">Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p>
-                 <p><strong class="text-gray-600 w-20 inline-block">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p> </div>
+                 <p><strong class="text-gray-600 w-20 inline-block">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
+             </div>
         </div>
 
         <div id="messageArea" class="mt-4 text-center"></div>
@@ -87,7 +89,7 @@
     <script>
         // --- Configuration ---
         // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdQNy5MCABcrjDYoOoIEbL79rCTCYfEtEGPKyIkh68Uhtfe8jyA6jTOOvWW3z1rCCE/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdQNy5MCABcrjDYoOoIEbL79rCTCYfEtEGPKyIkh68Uhtfe8jyA6jTOOvWW3z1rCCE/exec'; // Use your actual script URL
         const PLACEHOLDER_IMAGE = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC';
         // --- End Configuration ---
 
@@ -111,9 +113,12 @@
         /**
          * Displays the fetched item data in the HTML.
          * @param {object} data - The data object received from the Apps Script.
-         * Expected keys: itemName, sku, brand, stocks, price, msrp, imageUrl.
          */
         function displayResults(data) {
+            // --- ADDED LOGGING ---
+            console.log("Received data from script:", data);
+            // --- END LOGGING ---
+
             // Display text data, providing 'N/A' as fallback
             itemNameSpan.textContent = data.itemName || 'N/A';
             itemSkuSpan.textContent = data.sku || 'N/A';
@@ -125,10 +130,14 @@
 
             // Display image
             if (data.imageUrl) {
-                itemImage.src = data.imageUrl;
+                 // --- ADDED LOGGING ---
+                console.log("Attempting to load image URL:", data.imageUrl);
+                 // --- END LOGGING ---
+                itemImage.src = data.imageUrl; // Set the source
                 itemImage.alt = data.itemName || 'Item Image'; // Set descriptive alt text
-                itemImage.classList.remove('hidden'); // Show the image element
+                itemImage.classList.remove('hidden'); // Show the image element *after* setting src
             } else {
+                console.log("No imageUrl received from script."); // Log if no URL
                 // If no image URL provided, show 'No Image' placeholder
                 itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image';
                 itemImage.alt = 'No image available';
@@ -168,6 +177,7 @@
             // Reset image to initial placeholder and ensure it's visible
             itemImage.src = PLACEHOLDER_IMAGE;
             itemImage.alt = 'Item Image';
+            // Don't hide the placeholder initially, let displayResults handle hiding/showing
             itemImage.classList.remove('hidden');
         }
 
@@ -190,11 +200,13 @@
             clearOutput(); // Clear previous results before starting new lookup
             loadingIndicator.classList.remove('hidden'); // Show loading spinner
             lookupButton.disabled = true; // Disable button during lookup
-            itemImage.classList.add('hidden'); // Hide image area during loading
+            // Keep placeholder visible during load until new image is set or confirmed missing
+            // itemImage.classList.add('hidden'); // Don't hide image area during loading
 
             try {
                 // Construct the full URL for the Apps Script web app, encoding the UPC
                 const lookupUrl = `${SCRIPT_URL}?upc=${encodeURIComponent(upc)}`;
+                console.log("Fetching from URL:", lookupUrl); // Log fetch URL
 
                 // Fetch data from the Google Apps Script Web App using async/await
                 const response = await fetch(lookupUrl);
@@ -208,12 +220,16 @@
                         if (errorData && errorData.message) {
                             errorText += `: ${errorData.message}`;
                         }
-                    } catch (e) { /* Ignore if response body isn't JSON */ }
+                         console.error("Fetch error response data:", errorData); // Log error data
+                    } catch (e) {
+                         console.error("Fetch error, response not JSON:", await response.text()); // Log raw text on JSON parse failure
+                    }
                     throw new Error(errorText); // Throw an error to be caught below
                 }
 
                 // Parse the JSON response from the Apps Script
                 const result = await response.json();
+                console.log("Parsed fetch result:", result); // Log parsed result
 
                 // Process the response based on the status returned by the script
                 if (result.status === 'success' && result.data) {
@@ -221,11 +237,13 @@
                 } else if (result.status === 'not_found') {
                     showMessage(`Item with UPC ${upc} not found.`);
                     itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Not+Found'; // Show 'Not Found' placeholder
+                    itemImage.alt = 'Item not found';
                     itemImage.classList.remove('hidden');
                 } else {
                     // Handle other errors reported by the script (e.g., script errors)
                     showMessage(result.message || 'An unknown error occurred during lookup.', true);
                     itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Error'; // Show 'Error' placeholder
+                    itemImage.alt = 'Error loading data';
                     itemImage.classList.remove('hidden');
                 }
 
@@ -233,7 +251,8 @@
                 // Catch network errors or errors thrown during response processing
                 console.error('Lookup Error:', error); // Log the full error to the console
                 showMessage(`Failed to fetch data. Error: ${error.message}`, true); // Show user-friendly error
-                itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Error'; // Show 'Error' placeholder
+                itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Fetch+Error'; // Show 'Fetch Error' placeholder
+                itemImage.alt = 'Error fetching data';
                 itemImage.classList.remove('hidden');
             } finally {
                 // This block always runs, whether the try succeeded or failed
