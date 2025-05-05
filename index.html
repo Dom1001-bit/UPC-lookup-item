@@ -50,6 +50,11 @@
             align-items: center;
             justify-content: center;
         }
+        /* Adjust label width if needed */
+        .label-width {
+             width: 5.5rem; /* Increased width for "Cost Price" */
+             display: inline-block;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,12 +92,11 @@
                  </div>
 
                  <div class="space-y-3">
-                     <p><strong class="text-gray-600 w-20 inline-block">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 w-20 inline-block">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 w-20 inline-block">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 w-20 inline-block">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 w-20 inline-block">Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 w-20 inline-block">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 label-width">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 label-width">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 label-width">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 label-width">Sources:</strong> <span id="itemSources" class="text-gray-800"></span></p> <p><strong class="text-gray-600 label-width">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
+                     <p><strong class="text-gray-600 label-width">Cost Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p> <p><strong class="text-gray-600 label-width">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
                  </div>
             </div>
 
@@ -121,6 +125,7 @@
         const itemNameSpan = document.getElementById('itemName');
         const itemSkuSpan = document.getElementById('itemSku');
         const itemBrandSpan = document.getElementById('itemBrand');
+        const itemSourcesSpan = document.getElementById('itemSources'); // Added reference for Sources
         const itemStocksSpan = document.getElementById('itemStocks');
         const itemPriceSpan = document.getElementById('itemPrice');
         const itemMsrpSpan = document.getElementById('itemMsrp'); // Use MSRP ID
@@ -128,6 +133,7 @@
         /**
          * Displays the fetched item data in the HTML.
          * @param {object} data - The data object received from the Apps Script.
+         * Expected keys: itemName, sku, brand, sources, stocks, price, msrp, imageUrl.
          */
         function displayResults(data) {
             // --- ADDED LOGGING ---
@@ -138,10 +144,11 @@
             itemNameSpan.textContent = data.itemName || 'N/A';
             itemSkuSpan.textContent = data.sku || 'N/A';
             itemBrandSpan.textContent = data.brand || 'N/A';
+            itemSourcesSpan.textContent = data.sources || 'N/A'; // Display Sources
             // Handle potential numeric 0 values correctly
             itemStocksSpan.textContent = data.stocks !== undefined && data.stocks !== null ? data.stocks : 'N/A';
-            itemPriceSpan.textContent = data.price !== undefined && data.price !== null ? data.price : 'N/A';
-            itemMsrpSpan.textContent = data.msrp !== undefined && data.msrp !== null ? data.msrp : 'N/A'; // Use data.msrp
+            itemPriceSpan.textContent = data.price !== undefined && data.price !== null ? data.price : 'N/A'; // This is now Cost Price
+            itemMsrpSpan.textContent = data.msrp !== undefined && data.msrp !== null ? data.msrp : 'N/A'; // This is MSRP
 
             // Display image
             if (data.imageUrl) {
@@ -185,6 +192,7 @@
             itemNameSpan.textContent = '';
             itemSkuSpan.textContent = '';
             itemBrandSpan.textContent = '';
+            itemSourcesSpan.textContent = ''; // Clear Sources
             itemStocksSpan.textContent = '';
             itemPriceSpan.textContent = '';
             itemMsrpSpan.textContent = ''; // Clear MSRP
@@ -207,6 +215,7 @@
             }
 
             // Check if the script URL has been configured
+            // NOTE: Replace 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' if you haven't already
             if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
                  showMessage('Error: Google Apps Script URL is not configured in the HTML.', true);
                  return; // Exit if URL is missing
