@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPC Item Lookup</title>
+    <title>Item Lookup</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles if needed */
+        /* Custom styles */
         body {
-            font-family: 'Inter', sans-serif; /* Use Inter font */
+            font-family: 'Inter', sans-serif;
             display: flex;
-            flex-direction: column; /* Stack main content and footer */
-            min-height: 100vh; /* Ensure body takes full viewport height */
-            margin: 0; /* Remove default body margin */
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f3f4f6; /* Lighter gray background */
         }
-        /* Add a subtle animation for the loading spinner */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -23,54 +23,77 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            border-left-color: #09f;
+            border-left-color: #3b82f6; /* Blue spinner */
             animation: spin 1s linear infinite;
         }
-        /* Style for the image container */
-        #imageContainer {
-            min-height: 150px; /* Ensure space even before image loads */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 1rem; /* Add some space below the image */
-            border: 1px solid #e5e7eb; /* Optional border */
-            border-radius: 0.375rem; /* Rounded corners */
-            overflow: hidden; /* Ensure image stays within bounds */
-            background-color: #f9fafb; /* Light background */
-        }
-        #itemImage {
-            max-width: 100%;
-            max-height: 200px; /* Limit image height */
-            height: auto; /* Maintain aspect ratio */
-            object-fit: contain; /* Fit image within container without stretching */
-        }
-        /* Ensure main content area takes available space */
         .main-content {
-            flex-grow: 1; /* Allow main content to grow */
+            flex-grow: 1;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%; /* Ensure it takes full width */
-            padding: 1rem; /* Add padding */
-            box-sizing: border-box; /* Include padding in width calculation */
+            align-items: center; /* Center vertically */
+            justify-content: center; /* Center horizontally */
+            width: 100%;
+            padding: 1rem;
+            box-sizing: border-box;
         }
-        /* Adjust label width if needed */
-        .label-width {
-             width: 5.5rem; /* Increased width for "Cost Price" */
-             display: inline-block;
-             font-weight: 600; /* Make labels semi-bold */
-             color: #4b5563; /* Slightly darker gray for labels */
+        .card {
+             background-color: white;
+             padding: 1.5rem 2rem; /* More padding */
+             border-radius: 0.5rem; /* Standard rounded corners */
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Subtle shadow */
+             width: 100%;
+             max-width: 500px; /* Slightly wider card */
         }
-        /* Footer styling */
+        /* Result item card styling */
+        .result-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #f9fafb;
+        }
+        .result-item img {
+            max-width: 100px; /* Limit image size in list */
+            max-height: 100px;
+            height: auto;
+            object-fit: contain;
+            border-radius: 0.25rem;
+            border: 1px solid #e5e7eb;
+            margin-right: 1rem;
+            float: left; /* Float image left */
+        }
+         .result-item::after { /* Clear float */
+            content: "";
+            clear: both;
+            display: table;
+        }
+        .result-item p {
+            margin-bottom: 0.25rem; /* Tighter spacing in result items */
+            font-size: 0.875rem; /* Slightly smaller font in results */
+        }
+        .result-item strong {
+            display: inline-block;
+            width: 5.5rem; /* Consistent label width */
+             font-weight: 600;
+             color: #4b5563;
+        }
         footer {
             width: 100%;
             text-align: center;
             padding: 1rem 0;
-            margin-top: 2rem; /* Space above footer */
-            color: #6b7280; /* Gray text */
-            font-size: 0.875rem; /* Smaller text */
-            border-top: 1px solid #e5e7eb; /* Optional top border */
-            background-color: #f9fafb; /* Light background to match card */
+            margin-top: 2rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        /* Style select dropdown */
+        select {
+            appearance: none; /* Remove default appearance */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22%236b7280%22%3E%3Cpath%20d%3D%22M5.293%207.293a1%201%200%200%201%201.414%200L10%2010.586l3.293-3.293a1%201%200%201%201%201.414%201.414l-4%204a1%201%200%200%201-1.414%200l-4-4a1%201%200%200%201%200-1.414z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem; /* Make space for arrow */
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,15 +103,26 @@
 <body class="bg-gray-100">
 
     <div class="main-content">
-        <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
+        <div class="card">
             <div class="flex justify-center mb-4">
-                 <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-16 w-auto rounded-md" onerror="this.style.display='none'"> </div>
+                 <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-16 w-auto rounded-md" onerror="this.style.display='none'">
+            </div>
 
-            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Item Lookup by UPC</h1>
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Item Lookup</h1>
 
             <div class="mb-4">
-                <label for="upcInput" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
-                <input type="text" id="upcInput" name="upc" placeholder="Scan or type UPC code" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <label for="searchType" class="block text-sm font-medium text-gray-700 mb-1">Search By:</label>
+                <select id="searchType" name="searchType" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="upc" selected>UPC</option>
+                    <option value="sku">SKU</option>
+                    <option value="itemName">Item Name</option>
+                    <option value="brand">Brand</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="searchInput" id="searchLabel" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
+                <input type="text" id="searchInput" name="term" placeholder="Enter search term" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             </div>
 
             <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
@@ -100,86 +134,106 @@
                 <span class="ml-3 text-gray-600">Looking up item...</span>
             </div>
 
-            <div id="results" class="hidden">
-                 <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
-
-                 <div id="imageContainer">
-                     <img id="itemImage" src="https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC" alt="Item Image" class="hidden"
-                          onerror="console.error('Image failed to load. URL:', this.src); this.src='https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image'; this.alt='No image available'; this.classList.remove('hidden');">
-                 </div>
-
-                 <div class="space-y-3">
-                     <p><strong class="label-width">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
-                     <p><strong class="label-width">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
-                     <p><strong class="label-width">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
-                     <p><strong class="label-width">Sources:</strong> <span id="itemSources" class="text-gray-800"></span></p> <p><strong class="label-width">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
-                     <p><strong class="label-width">Cost Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p> <p><strong class="label-width">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
-                 </div>
+            <div id="resultsContainer" class="hidden">
+                 <h2 id="resultsTitle" class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
+                 <div id="resultsList"></div>
             </div>
 
             <div id="messageArea" class="mt-4 text-center"></div>
 
-        </div> </div> <footer class="text-center text-gray-500 text-sm"> Created and Powered by Dom B.
+        </div> </div> <footer class="text-center text-gray-500 text-sm">
+        Created and Powered by Dom B.
     </footer>
 
     <script>
         // --- Configuration ---
         // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
         // --- Make sure this is the '/exec' URL from your latest deployment ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCkTnqXfwEb27JK_J26AQFLsOoHOtlF5kWAhFlhrB1xH8GgtiNhkSEfDXpKfTH_YNx/exec';
-        const PLACEHOLDER_IMAGE = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCkTnqXfwEb27JK_J26AQFLsOoHOtlF5kWAhFlhrB1xH8GgtiNhkSEfDXpKfTH_YNx/exec'; // Replace with your actual URL
+        const PLACEHOLDER_IMAGE = 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
         // --- End Configuration ---
 
         // --- DOM Element References ---
-        const upcInput = document.getElementById('upcInput');
+        const searchTypeSelect = document.getElementById('searchType');
+        const searchInput = document.getElementById('searchInput');
+        const searchLabel = document.getElementById('searchLabel');
         const lookupButton = document.getElementById('lookupButton');
-        const resultsDiv = document.getElementById('results');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsList = document.getElementById('resultsList');
+        const resultsTitle = document.getElementById('resultsTitle');
         const messageArea = document.getElementById('messageArea');
         const loadingIndicator = document.getElementById('loadingIndicator');
-        const itemImage = document.getElementById('itemImage'); // Get image element
-        const imageContainer = document.getElementById('imageContainer'); // Container for better control
-
-        // --- Element References for Data Display ---
-        const itemNameSpan = document.getElementById('itemName');
-        const itemSkuSpan = document.getElementById('itemSku');
-        const itemBrandSpan = document.getElementById('itemBrand');
-        const itemSourcesSpan = document.getElementById('itemSources'); // Added reference for Sources
-        const itemStocksSpan = document.getElementById('itemStocks');
-        const itemPriceSpan = document.getElementById('itemPrice');
-        const itemMsrpSpan = document.getElementById('itemMsrp'); // Use MSRP ID
 
         /**
-         * Displays the fetched item data in the HTML.
-         * @param {object} data - The data object received from the Apps Script.
+         * Updates the search input label and placeholder based on selected type.
+         */
+        function updateSearchLabel() {
+            const selectedType = searchTypeSelect.options[searchTypeSelect.selectedIndex].text; // Get display text
+            searchLabel.textContent = `Enter ${selectedType}:`;
+            searchInput.placeholder = `Enter ${selectedType}`;
+        }
+
+        /**
+         * Creates HTML for a single result item.
+         * @param {object} itemData - The data for one item.
+         * @returns {string} HTML string for the item.
+         */
+        function createResultItemHTML(itemData) {
+            const imageUrl = itemData.imageUrl || PLACEHOLDER_IMAGE;
+            const imageAlt = itemData.itemName || 'Item Image';
+            // Use 'N/A' as fallback for potentially missing data
+            const itemName = itemData.itemName || 'N/A';
+            const sku = itemData.sku || 'N/A';
+            const brand = itemData.brand || 'N/A';
+            const sources = itemData.sources || 'N/A';
+            const stocks = itemData.stocks !== undefined && itemData.stocks !== null ? itemData.stocks : 'N/A';
+            const price = itemData.price !== undefined && itemData.price !== null ? itemData.price : 'N/A'; // Cost Price
+            const msrp = itemData.msrp !== undefined && itemData.msrp !== null ? itemData.msrp : 'N/A';
+            const upc = itemData.upc || 'N/A';
+
+            // Use template literals for easier HTML construction
+            return `
+                <div class="result-item">
+                    <img src="${imageUrl}" alt="${imageAlt}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
+                    <div>
+                        <p><strong>Name:</strong> ${itemName}</p>
+                        <p><strong>SKU:</strong> ${sku}</p>
+                        <p><strong>UPC:</strong> ${upc}</p>
+                        <p><strong>Brand:</strong> ${brand}</p>
+                        <p><strong>Sources:</strong> ${sources}</p>
+                        <p><strong>Stocks:</strong> ${stocks}</p>
+                        <p><strong>Cost Price:</strong> ${price}</p>
+                        <p><strong>MSRP:</strong> ${msrp}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Displays the fetched item data in the HTML. Handles single or multiple results.
+         * @param {object | object[]} data - The data object or array of data objects.
          */
         function displayResults(data) {
-            console.log("Received data from script:", data); // Log received data
+            console.log("Received data from script:", data);
+            resultsList.innerHTML = ''; // Clear previous results
 
-            // Display text data, providing 'N/A' as fallback
-            itemNameSpan.textContent = data.itemName || 'N/A';
-            itemSkuSpan.textContent = data.sku || 'N/A';
-            itemBrandSpan.textContent = data.brand || 'N/A';
-            itemSourcesSpan.textContent = data.sources || 'N/A'; // Display Sources
-            // Handle potential numeric 0 values correctly
-            itemStocksSpan.textContent = data.stocks !== undefined && data.stocks !== null ? data.stocks : 'N/A';
-            itemPriceSpan.textContent = data.price !== undefined && data.price !== null ? data.price : 'N/A'; // Cost Price
-            itemMsrpSpan.textContent = data.msrp !== undefined && data.msrp !== null ? data.msrp : 'N/A'; // MSRP
-
-            // Display image
-            if (data.imageUrl) {
-                console.log("Attempting to load image URL:", data.imageUrl); // Log image URL
-                itemImage.src = data.imageUrl; // Set the source
-                itemImage.alt = data.itemName || 'Item Image'; // Set descriptive alt text
-                itemImage.classList.remove('hidden'); // Show the image element *after* setting src
+            if (Array.isArray(data) && data.length > 0) {
+                // Multiple results (likely from Brand search)
+                resultsTitle.textContent = `Found ${data.length} Item(s)`;
+                data.forEach(item => {
+                    resultsList.innerHTML += createResultItemHTML(item);
+                });
+            } else if (!Array.isArray(data) && data) {
+                 // Single result
+                 resultsTitle.textContent = 'Item Details';
+                 resultsList.innerHTML = createResultItemHTML(data);
             } else {
-                console.log("No imageUrl received from script."); // Log if no URL
-                // If no image URL provided, show 'No Image' placeholder
-                itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=No+Image';
-                itemImage.alt = 'No image available';
-                itemImage.classList.remove('hidden'); // Show the placeholder image
+                // Should not happen if status is success, but handle defensively
+                 showMessage('Received success status but no data.', true);
+                 return; // Don't show the results container
             }
 
-            resultsDiv.classList.remove('hidden'); // Show the whole results section
+            resultsContainer.classList.remove('hidden'); // Show the results section
         }
 
         /**
@@ -189,145 +243,101 @@
          */
         function showMessage(message, isError = false) {
             messageArea.textContent = message;
-            // Apply appropriate Tailwind classes for styling
-            messageArea.className = `mt-4 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100' : 'text-yellow-700 bg-yellow-100'}`;
+            messageArea.className = `mt-4 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border border-yellow-200'}`; // Added borders
         }
 
         /**
          * Clears previous results, messages, and resets the UI to its initial state.
          */
         function clearOutput() {
-            resultsDiv.classList.add('hidden'); // Hide results section
+            resultsContainer.classList.add('hidden'); // Hide results section
+            resultsList.innerHTML = ''; // Clear results list
             messageArea.textContent = ''; // Clear message text
             messageArea.className = 'mt-4 text-center'; // Reset message area class
-
-            // Clear previous text data
-            itemNameSpan.textContent = '';
-            itemSkuSpan.textContent = '';
-            itemBrandSpan.textContent = '';
-            itemSourcesSpan.textContent = ''; // Clear Sources
-            itemStocksSpan.textContent = '';
-            itemPriceSpan.textContent = '';
-            itemMsrpSpan.textContent = ''; // Clear MSRP
-
-            // Reset image to initial placeholder and ensure it's visible
-            itemImage.src = PLACEHOLDER_IMAGE;
-            itemImage.alt = 'Item Image';
-            itemImage.classList.remove('hidden');
         }
 
         /**
          * Handles the item lookup process when the button is clicked.
          */
         async function handleLookup() {
-            const upc = upcInput.value.trim(); // Get and trim UPC input
-            if (!upc) {
-                showMessage('Please enter a UPC code.', true);
-                return; // Exit if no UPC is entered
+            const searchTerm = searchInput.value.trim();
+            const searchType = searchTypeSelect.value;
+
+            if (!searchTerm) {
+                showMessage(`Please enter a ${searchTypeSelect.options[searchTypeSelect.selectedIndex].text}.`, true);
+                return;
             }
 
-            // Check if the script URL placeholder is still present
             if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
                  showMessage('Configuration Error: Google Apps Script URL is missing in the HTML.', true);
-                 return; // Exit if URL is missing
+                 return;
             }
 
-            clearOutput(); // Clear previous results before starting new lookup
-            loadingIndicator.classList.remove('hidden'); // Show loading spinner
-            lookupButton.disabled = true; // Disable button during lookup
+            clearOutput();
+            loadingIndicator.classList.remove('hidden');
+            lookupButton.disabled = true;
 
             try {
-                // Construct the full URL for the Apps Script web app, encoding the UPC
-                const lookupUrl = `${SCRIPT_URL}?upc=${encodeURIComponent(upc)}`;
-                console.log("Fetching from URL:", lookupUrl); // Log fetch URL
+                // Construct the URL with search term and type as query parameters
+                const lookupUrl = `${SCRIPT_URL}?type=${encodeURIComponent(searchType)}&term=${encodeURIComponent(searchTerm)}`;
+                console.log("Fetching from URL:", lookupUrl);
 
-                // Fetch data from the Google Apps Script Web App using async/await
                 const response = await fetch(lookupUrl, {
                     method: 'GET',
-                    mode: 'cors', // Explicitly set CORS mode, though often default
-                    redirect: 'follow' // Follow redirects if any
+                    mode: 'cors',
+                    redirect: 'follow'
                 });
 
-                console.log("Fetch response status:", response.status); // Log response status
+                console.log("Fetch response status:", response.status);
 
-                // Check if the network request was successful
                 if (!response.ok) {
-                     // Try to get a more specific error message from the response body or status text
                     let errorText = `Network response was not ok (status: ${response.status} ${response.statusText})`;
                     try {
-                        // Attempt to read response body for more details, if available
-                        const errorBody = await response.text(); // Read as text first
-                        console.error("Fetch error response body:", errorBody); // Log raw error body
-                        try {
-                           const errorData = JSON.parse(errorBody); // Try parsing as JSON
-                           if (errorData && errorData.message) {
-                               errorText += `: ${errorData.message}`;
-                           }
-                        } catch (parseError) {
-                           // If not JSON, include the raw text if it's not too long
-                           if (errorBody && errorBody.length < 500) {
-                              errorText += `: ${errorBody}`;
-                           }
-                        }
-                    } catch (bodyError) {
-                        console.error("Could not read error response body:", bodyError);
-                     }
-                    throw new Error(errorText); // Throw an error to be caught below
+                        const errorBody = await response.text();
+                        console.error("Fetch error response body:", errorBody);
+                        errorText += `: ${errorBody.substring(0, 100)}`; // Add snippet of body
+                    } catch (bodyError) { /* Ignore */ }
+                    throw new Error(errorText);
                 }
 
-                // Parse the JSON response from the Apps Script
                 const result = await response.json();
-                console.log("Parsed fetch result:", result); // Log parsed result
+                console.log("Parsed fetch result:", result);
 
-                // Process the response based on the status returned by the script
                 if (result.status === 'success' && result.data) {
-                    displayResults(result.data); // Display the found item data
+                    // Check if data is an empty array (possible for brand search with no results)
+                    if (Array.isArray(result.data) && result.data.length === 0) {
+                         showMessage(`No items found matching the ${searchType} '${searchTerm}'.`, false); // Use non-error style
+                    } else {
+                        displayResults(result.data); // Display single or multiple results
+                    }
                 } else if (result.status === 'not_found') {
-                    showMessage(`Item with UPC ${upc} not found.`);
-                    itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Not+Found'; // Show 'Not Found' placeholder
-                    itemImage.alt = 'Item not found';
-                    itemImage.classList.remove('hidden');
+                    showMessage(`No items found matching the ${searchType} '${searchTerm}'.`, false); // Use non-error style
                 } else {
-                    // Handle other errors reported by the script (e.g., script errors)
                     showMessage(result.message || 'An unknown error occurred during lookup.', true);
-                    itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Script+Error'; // Show 'Script Error' placeholder
-                    itemImage.alt = 'Error processing data';
-                    itemImage.classList.remove('hidden');
                 }
 
             } catch (error) {
-                // Catch network errors or errors thrown during response processing
-                console.error('Lookup Error:', error); // Log the full error to the console
-                // Display a more generic fetch error message to the user
+                console.error('Lookup Error:', error);
                 showMessage(`Failed to fetch data. Error: ${error.message}`, true);
-                itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Fetch+Error'; // Show 'Fetch Error' placeholder
-                itemImage.alt = 'Error fetching data';
-                itemImage.classList.remove('hidden');
             } finally {
-                // This block always runs, whether the try succeeded or failed
-                loadingIndicator.classList.add('hidden'); // Hide loading spinner
-                lookupButton.disabled = false; // Re-enable the lookup button
+                loadingIndicator.classList.add('hidden');
+                lookupButton.disabled = false;
             }
         }
 
         // --- Event Listeners ---
-
-        // Add event listener for the lookup button click
+        searchTypeSelect.addEventListener('change', updateSearchLabel);
         lookupButton.addEventListener('click', handleLookup);
-
-        // Add event listener to allow pressing Enter in the input field to trigger lookup
-        upcInput.addEventListener('keypress', (event) => {
-            // Check if the key pressed was 'Enter'
+        searchInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent default form submission behavior (if applicable)
-                handleLookup(); // Trigger the same lookup function as the button click
+                event.preventDefault();
+                handleLookup();
             }
         });
 
         // --- Initial Setup ---
-
-        // Call clearOutput on initial page load to set the placeholder image correctly
-        clearOutput();
+        updateSearchLabel(); // Set initial label
+        clearOutput(); // Clear any potential initial state issues
 
     </script>
 
