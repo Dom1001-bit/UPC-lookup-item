@@ -29,53 +29,102 @@
         .main-content {
             flex-grow: 1;
             display: flex;
-            align-items: center; /* Center vertically */
+            /* align-items: center; Remove vertical centering to allow content to flow from top */
             justify-content: center; /* Center horizontally */
             width: 100%;
-            padding: 1rem;
+            padding: 1rem md:2rem; /* More padding on medium screens and up */
             box-sizing: border-box;
         }
         .card {
              background-color: white;
-             padding: 1.5rem 2rem; /* More padding */
-             border-radius: 0.5rem; /* Standard rounded corners */
-             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Subtle shadow */
+             padding: 1.5rem 2rem;
+             border-radius: 0.5rem;
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
              width: 100%;
-             max-width: 500px; /* Slightly wider card */
+             max-width: 42rem; /* Default max-width, can be overridden by responsive classes */
         }
+        /* Responsive card width for desktop */
+        @media (min-width: 1024px) { /* lg breakpoint */
+            .card {
+                max-width: 64rem; /* Wider card on large screens */
+            }
+        }
+
         /* Result item card styling */
         .result-item {
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            border-radius: 0.375rem; /* Tailwind rounded-md */
             padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: #f9fafb;
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            display: flex; /* Use flex for better alignment */
+            flex-direction: column; /* Stack image and details vertically on small screens */
+            gap: 0.75rem; /* Space between elements */
         }
-        .result-item img {
-            max-width: 100px; /* Limit image size in list */
-            max-height: 100px;
-            height: auto;
-            object-fit: contain;
-            border-radius: 0.25rem;
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .result-item {
+                flex-direction: row; /* Image and details side-by-side on medium screens and up */
+                align-items: flex-start; /* Align items to the top */
+            }
+        }
+
+        .result-item-image-container {
+            flex-shrink: 0; /* Prevent image container from shrinking */
+            width: 100px; /* Fixed width for image container */
+            height: 100px; /* Fixed height for image container */
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border: 1px solid #e5e7eb;
-            margin-right: 1rem;
-            float: left; /* Float image left */
+            border-radius: 0.25rem;
+            overflow: hidden; /* Ensure image is contained */
+            margin-bottom: 0.5rem; /* Space below image on small screens */
         }
-         .result-item::after { /* Clear float */
-            content: "";
-            clear: both;
-            display: table;
+         @media (min-width: 768px) { /* md breakpoint */
+            .result-item-image-container {
+                margin-right: 1rem; /* Space to the right of image on larger screens */
+                margin-bottom: 0;
+            }
         }
+
+        .result-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .result-item-details {
+            flex-grow: 1; /* Allow details section to take remaining space */
+        }
+
         .result-item p {
-            margin-bottom: 0.25rem; /* Tighter spacing in result items */
-            font-size: 0.875rem; /* Slightly smaller font in results */
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.25rem; /* leading-snug */
         }
         .result-item strong {
             display: inline-block;
-            width: 5.5rem; /* Consistent label width */
-             font-weight: 600;
-             color: #4b5563;
+            width: 6rem; /* Adjusted label width */
+             font-weight: 600; /* semibold */
+             color: #4b5563; /* gray-600 */
         }
+        /* Grid for multiple results */
+        #resultsList.grid-view {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr)); /* 1 column by default */
+            gap: 1rem; /* Space between grid items */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            #resultsList.grid-view {
+                grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 columns on medium screens */
+            }
+        }
+        @media (min-width: 1280px) { /* xl breakpoint */
+             #resultsList.grid-view {
+                grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 columns on extra large screens */
+            }
+        }
+
         footer {
             width: 100%;
             text-align: center;
@@ -88,12 +137,12 @@
         }
         /* Style select dropdown */
         select {
-            appearance: none; /* Remove default appearance */
+            appearance: none;
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22%236b7280%22%3E%3Cpath%20d%3D%22M5.293%207.293a1%201%200%200%201%201.414%200L10%2010.586l3.293-3.293a1%201%200%201%201%201.414%201.414l-4%204a1%201%200%200%201-1.414%200l-4-4a1%201%200%200%201%200-1.414z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
             background-position: right 0.5rem center;
             background-size: 1.5em 1.5em;
-            padding-right: 2.5rem; /* Make space for arrow */
+            padding-right: 2.5rem;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,52 +152,57 @@
 <body class="bg-gray-100">
 
     <div class="main-content">
-        <div class="card">
-            <div class="flex justify-center mb-4">
-                 <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-16 w-auto rounded-md" onerror="this.style.display='none'">
+        <div class="card lg:max-w-3xl xl:max-w-5xl"> 
+            <div class="flex justify-center mb-6">
+                 <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-20 w-auto rounded-md" onerror="this.style.display='none'">
             </div>
 
-            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Item Lookup</h1>
+            <h1 class="text-3xl font-bold mb-8 text-center text-gray-800">Item Lookup</h1>
 
-            <div class="mb-4">
-                <label for="searchType" class="block text-sm font-medium text-gray-700 mb-1">Search By:</label>
-                <select id="searchType" name="searchType" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
-                    <option value="upc" selected>UPC</option>
-                    <option value="sku">SKU</option>
-                    <option value="itemName">Item Name</option>
-                    <option value="brand">Brand</option>
-                </select>
+            <div class="flex flex-col md:flex-row md:gap-4 mb-6 items-end">
+                <div class="flex-grow mb-4 md:mb-0">
+                    <label for="searchType" class="block text-sm font-medium text-gray-700 mb-1">Search By:</label>
+                    <select id="searchType" name="searchType" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <option value="upc" selected>UPC</option>
+                        <option value="sku">SKU</option>
+                        <option value="itemName">Item Name</option>
+                        <option value="brand">Brand</option>
+                    </select>
+                </div>
+
+                <div class="flex-grow-[2] mb-4 md:mb-0"> 
+                    <label for="searchInput" id="searchLabel" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
+                    <input type="text" id="searchInput" name="term" placeholder="Enter search term" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <button id="lookupButton" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Lookup Item
+                </button>
             </div>
 
-            <div class="mb-4">
-                <label for="searchInput" id="searchLabel" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
-                <input type="text" id="searchInput" name="term" placeholder="Enter search term" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-            </div>
 
-            <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                Lookup Item
-            </button>
-
-            <div id="loadingIndicator" class="hidden flex justify-center items-center mb-4">
+            <div id="loadingIndicator" class="hidden flex justify-center items-center my-8"> 
                 <div class="spinner"></div>
-                <span class="ml-3 text-gray-600">Looking up item...</span>
+                <span class="ml-3 text-gray-600 text-lg">Looking up item...</span>
             </div>
 
-            <div id="resultsContainer" class="hidden">
-                 <h2 id="resultsTitle" class="text-xl font-semibold text-gray-700 border-b pb-2 mb-4">Item Details</h2>
+            <div id="resultsContainer" class="hidden mt-8"> 
+                 <h2 id="resultsTitle" class="text-2xl font-semibold text-gray-700 border-b pb-3 mb-6">Item Details</h2>
+                 
                  <div id="resultsList"></div>
             </div>
 
-            <div id="messageArea" class="mt-4 text-center"></div>
+            <div id="messageArea" class="mt-6 text-center"></div>
 
-        </div> </div> <footer class="text-center text-gray-500 text-sm">
+        </div> 
+    </div> 
+    <footer class="text-center text-gray-500 text-sm">
         Created and Powered by Dom B.
     </footer>
 
     <script>
         // --- Configuration ---
         // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
-        // --- Make sure this is the '/exec' URL from your latest deployment ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9DC2aWKQrP5wXBigS5Zaq3Q-o6Geb-ttDeT4Fgay6q8zfByh34h81GvpZbGgh6Ipm/exec'; // Replace with your actual URL
         const PLACEHOLDER_IMAGE = 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
         // --- End Configuration ---
@@ -194,8 +248,10 @@
             // Use template literals for easier HTML construction
             return `
                 <div class="result-item">
-                    <img src="${imageUrl}" alt="${imageAlt}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
-                    <div>
+                    <div class="result-item-image-container">
+                        <img src="${imageUrl}" alt="${imageAlt}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
+                    </div>
+                    <div class="result-item-details">
                         <p><strong>Name:</strong> ${itemName}</p>
                         <p><strong>SKU:</strong> ${sku}</p>
                         <p><strong>UPC:</strong> ${upc}</p>
@@ -216,20 +272,24 @@
         function displayResults(data) {
             console.log("Received data from script:", data);
             resultsList.innerHTML = ''; // Clear previous results
+            resultsList.classList.remove('grid-view'); // Remove grid class initially
 
             if (Array.isArray(data) && data.length > 0) {
-                // Multiple results (likely from Brand search)
+                // Multiple results (likely from Brand or Item Name search)
                 resultsTitle.textContent = `Found ${data.length} Item(s)`;
                 data.forEach(item => {
                     resultsList.innerHTML += createResultItemHTML(item);
                 });
+                if (data.length > 1) { // Apply grid view only if more than one item
+                    resultsList.classList.add('grid-view');
+                }
             } else if (!Array.isArray(data) && data) {
                  // Single result
                  resultsTitle.textContent = 'Item Details';
                  resultsList.innerHTML = createResultItemHTML(data);
             } else {
                 // Should not happen if status is success, but handle defensively
-                 showMessage('Received success status but no data.', true);
+                 showMessage('Received success status but no data or empty array.', true);
                  return; // Don't show the results container
             }
 
@@ -243,7 +303,7 @@
          */
         function showMessage(message, isError = false) {
             messageArea.textContent = message;
-            messageArea.className = `mt-4 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border border-yellow-200'}`; // Added borders
+            messageArea.className = `mt-6 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border border-yellow-200'}`; // Added borders
         }
 
         /**
@@ -252,8 +312,9 @@
         function clearOutput() {
             resultsContainer.classList.add('hidden'); // Hide results section
             resultsList.innerHTML = ''; // Clear results list
+            resultsList.classList.remove('grid-view'); // Ensure grid class is removed
             messageArea.textContent = ''; // Clear message text
-            messageArea.className = 'mt-4 text-center'; // Reset message area class
+            messageArea.className = 'mt-6 text-center'; // Reset message area class
         }
 
         /**
@@ -304,14 +365,14 @@
                 console.log("Parsed fetch result:", result);
 
                 if (result.status === 'success' && result.data) {
-                    // Check if data is an empty array (possible for brand search with no results)
+                    // Check if data is an empty array (possible for brand/item name search with no results)
                     if (Array.isArray(result.data) && result.data.length === 0) {
-                         showMessage(`No items found matching the ${searchType} '${searchTerm}'.`, false); // Use non-error style
+                         showMessage(`No items found matching the ${searchTypeSelect.options[searchTypeSelect.selectedIndex].text} '${searchTerm}'.`, false); // Use non-error style
                     } else {
                         displayResults(result.data); // Display single or multiple results
                     }
                 } else if (result.status === 'not_found') {
-                    showMessage(`No items found matching the ${searchType} '${searchTerm}'.`, false); // Use non-error style
+                    showMessage(`No items found matching the ${searchTypeSelect.options[searchTypeSelect.selectedIndex].text} '${searchTerm}'.`, false); // Use non-error style
                 } else {
                     showMessage(result.message || 'An unknown error occurred during lookup.', true);
                 }
