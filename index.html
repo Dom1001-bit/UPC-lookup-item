@@ -12,6 +12,7 @@
             display: flex;
             flex-direction: column; /* Stack main content and footer */
             min-height: 100vh; /* Ensure body takes full viewport height */
+            margin: 0; /* Remove default body margin */
         }
         /* Add a subtle animation for the loading spinner */
         @keyframes spin {
@@ -49,20 +50,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%; /* Ensure it takes full width */
+            padding: 1rem; /* Add padding */
+            box-sizing: border-box; /* Include padding in width calculation */
         }
         /* Adjust label width if needed */
         .label-width {
              width: 5.5rem; /* Increased width for "Cost Price" */
              display: inline-block;
+             font-weight: 600; /* Make labels semi-bold */
+             color: #4b5563; /* Slightly darker gray for labels */
+        }
+        /* Footer styling */
+        footer {
+            width: 100%;
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: 2rem; /* Space above footer */
+            color: #6b7280; /* Gray text */
+            font-size: 0.875rem; /* Smaller text */
+            border-top: 1px solid #e5e7eb; /* Optional top border */
+            background-color: #f9fafb; /* Light background to match card */
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100 p-4">
+<body class="bg-gray-100">
 
-    <div class="main-content w-full">
+    <div class="main-content">
         <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
             <div class="flex justify-center mb-4">
                  <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-16 w-auto rounded-md" onerror="this.style.display='none'"> </div>
@@ -74,7 +91,7 @@
                 <input type="text" id="upcInput" name="upc" placeholder="Scan or type UPC code" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             </div>
 
-            <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6">
+            <button id="lookupButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                 Lookup Item
             </button>
 
@@ -92,23 +109,24 @@
                  </div>
 
                  <div class="space-y-3">
-                     <p><strong class="text-gray-600 label-width">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 label-width">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 label-width">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 label-width">Sources:</strong> <span id="itemSources" class="text-gray-800"></span></p> <p><strong class="text-gray-600 label-width">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
-                     <p><strong class="text-gray-600 label-width">Cost Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p> <p><strong class="text-gray-600 label-width">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
+                     <p><strong class="label-width">Name:</strong> <span id="itemName" class="text-gray-800"></span></p>
+                     <p><strong class="label-width">SKU:</strong> <span id="itemSku" class="text-gray-800"></span></p>
+                     <p><strong class="label-width">Brand:</strong> <span id="itemBrand" class="text-gray-800"></span></p>
+                     <p><strong class="label-width">Sources:</strong> <span id="itemSources" class="text-gray-800"></span></p> <p><strong class="label-width">Stocks:</strong> <span id="itemStocks" class="text-gray-800"></span></p>
+                     <p><strong class="label-width">Cost Price:</strong> <span id="itemPrice" class="text-gray-800"></span></p> <p><strong class="label-width">MSRP:</strong> <span id="itemMsrp" class="text-gray-800"></span></p>
                  </div>
             </div>
 
             <div id="messageArea" class="mt-4 text-center"></div>
 
-        </div> </div> <footer class="text-center text-gray-500 text-sm mt-8 py-4"> Created and Powered by Dom B.
+        </div> </div> <footer class="text-center text-gray-500 text-sm"> Created and Powered by Dom B.
     </footer>
 
     <script>
         // --- Configuration ---
         // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZkUu9P6aw6AmT5rR5Z827X0EdfhiNAyw_Z8A4nMwrpn_-Pz7Pt5w4-g02M70GqbLP/exec'; // Use your actual script URL
+        // --- Make sure this is the '/exec' URL from your latest deployment ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCkTnqXfwEb27JK_J26AQFLsOoHOtlF5kWAhFlhrB1xH8GgtiNhkSEfDXpKfTH_YNx/exec';
         const PLACEHOLDER_IMAGE = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Enter+UPC';
         // --- End Configuration ---
 
@@ -133,12 +151,9 @@
         /**
          * Displays the fetched item data in the HTML.
          * @param {object} data - The data object received from the Apps Script.
-         * Expected keys: itemName, sku, brand, sources, stocks, price, msrp, imageUrl.
          */
         function displayResults(data) {
-            // --- ADDED LOGGING ---
-            console.log("Received data from script:", data);
-            // --- END LOGGING ---
+            console.log("Received data from script:", data); // Log received data
 
             // Display text data, providing 'N/A' as fallback
             itemNameSpan.textContent = data.itemName || 'N/A';
@@ -147,14 +162,12 @@
             itemSourcesSpan.textContent = data.sources || 'N/A'; // Display Sources
             // Handle potential numeric 0 values correctly
             itemStocksSpan.textContent = data.stocks !== undefined && data.stocks !== null ? data.stocks : 'N/A';
-            itemPriceSpan.textContent = data.price !== undefined && data.price !== null ? data.price : 'N/A'; // This is now Cost Price
-            itemMsrpSpan.textContent = data.msrp !== undefined && data.msrp !== null ? data.msrp : 'N/A'; // This is MSRP
+            itemPriceSpan.textContent = data.price !== undefined && data.price !== null ? data.price : 'N/A'; // Cost Price
+            itemMsrpSpan.textContent = data.msrp !== undefined && data.msrp !== null ? data.msrp : 'N/A'; // MSRP
 
             // Display image
             if (data.imageUrl) {
-                 // --- ADDED LOGGING ---
-                console.log("Attempting to load image URL:", data.imageUrl);
-                 // --- END LOGGING ---
+                console.log("Attempting to load image URL:", data.imageUrl); // Log image URL
                 itemImage.src = data.imageUrl; // Set the source
                 itemImage.alt = data.itemName || 'Item Image'; // Set descriptive alt text
                 itemImage.classList.remove('hidden'); // Show the image element *after* setting src
@@ -200,7 +213,6 @@
             // Reset image to initial placeholder and ensure it's visible
             itemImage.src = PLACEHOLDER_IMAGE;
             itemImage.alt = 'Item Image';
-            // Don't hide the placeholder initially, let displayResults handle hiding/showing
             itemImage.classList.remove('hidden');
         }
 
@@ -214,18 +226,15 @@
                 return; // Exit if no UPC is entered
             }
 
-            // Check if the script URL has been configured
-            // NOTE: Replace 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' if you haven't already
+            // Check if the script URL placeholder is still present
             if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                 showMessage('Error: Google Apps Script URL is not configured in the HTML.', true);
+                 showMessage('Configuration Error: Google Apps Script URL is missing in the HTML.', true);
                  return; // Exit if URL is missing
             }
 
             clearOutput(); // Clear previous results before starting new lookup
             loadingIndicator.classList.remove('hidden'); // Show loading spinner
             lookupButton.disabled = true; // Disable button during lookup
-            // Keep placeholder visible during load until new image is set or confirmed missing
-            // itemImage.classList.add('hidden'); // Don't hide image area during loading
 
             try {
                 // Construct the full URL for the Apps Script web app, encoding the UPC
@@ -233,21 +242,36 @@
                 console.log("Fetching from URL:", lookupUrl); // Log fetch URL
 
                 // Fetch data from the Google Apps Script Web App using async/await
-                const response = await fetch(lookupUrl);
+                const response = await fetch(lookupUrl, {
+                    method: 'GET',
+                    mode: 'cors', // Explicitly set CORS mode, though often default
+                    redirect: 'follow' // Follow redirects if any
+                });
+
+                console.log("Fetch response status:", response.status); // Log response status
 
                 // Check if the network request was successful
                 if (!response.ok) {
-                     // Try to get a more specific error message from the response body
-                    let errorText = `Network response was not ok (status: ${response.status})`;
+                     // Try to get a more specific error message from the response body or status text
+                    let errorText = `Network response was not ok (status: ${response.status} ${response.statusText})`;
                     try {
-                        const errorData = await response.json(); // Assume error details might be JSON
-                        if (errorData && errorData.message) {
-                            errorText += `: ${errorData.message}`;
+                        // Attempt to read response body for more details, if available
+                        const errorBody = await response.text(); // Read as text first
+                        console.error("Fetch error response body:", errorBody); // Log raw error body
+                        try {
+                           const errorData = JSON.parse(errorBody); // Try parsing as JSON
+                           if (errorData && errorData.message) {
+                               errorText += `: ${errorData.message}`;
+                           }
+                        } catch (parseError) {
+                           // If not JSON, include the raw text if it's not too long
+                           if (errorBody && errorBody.length < 500) {
+                              errorText += `: ${errorBody}`;
+                           }
                         }
-                         console.error("Fetch error response data:", errorData); // Log error data
-                    } catch (e) {
-                         console.error("Fetch error, response not JSON:", await response.text()); // Log raw text on JSON parse failure
-                    }
+                    } catch (bodyError) {
+                        console.error("Could not read error response body:", bodyError);
+                     }
                     throw new Error(errorText); // Throw an error to be caught below
                 }
 
@@ -266,15 +290,16 @@
                 } else {
                     // Handle other errors reported by the script (e.g., script errors)
                     showMessage(result.message || 'An unknown error occurred during lookup.', true);
-                    itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Error'; // Show 'Error' placeholder
-                    itemImage.alt = 'Error loading data';
+                    itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Script+Error'; // Show 'Script Error' placeholder
+                    itemImage.alt = 'Error processing data';
                     itemImage.classList.remove('hidden');
                 }
 
             } catch (error) {
                 // Catch network errors or errors thrown during response processing
                 console.error('Lookup Error:', error); // Log the full error to the console
-                showMessage(`Failed to fetch data. Error: ${error.message}`, true); // Show user-friendly error
+                // Display a more generic fetch error message to the user
+                showMessage(`Failed to fetch data. Error: ${error.message}`, true);
                 itemImage.src = 'https://placehold.co/200x150/e2e8f0/94a3b8?text=Fetch+Error'; // Show 'Fetch Error' placeholder
                 itemImage.alt = 'Error fetching data';
                 itemImage.classList.remove('hidden');
