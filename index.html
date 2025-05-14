@@ -13,7 +13,12 @@
             flex-direction: column;
             min-height: 100vh;
             margin: 0;
-            background-color: #f3f4f6; /* Lighter gray background */
+            /* Background Image Styles */
+            background-image: url('https://i.imgur.com/U0uJiPi.png');
+            background-size: cover; /* Cover the entire page */
+            background-position: center center; /* Center the image */
+            background-repeat: no-repeat; /* Do not repeat the image */
+            background-attachment: fixed; /* Keep the background fixed during scroll */
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -36,10 +41,11 @@
             box-sizing: border-box;
         }
         .card {
-             background-color: white;
+             /* Semi-transparent white background for overlay effect */
+             background-color: rgba(255, 255, 255, 0.95); /* 95% opacity white */
              padding: 1.5rem 2rem;
              border-radius: 0.5rem;
-             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 20px 40px -10px rgba(0, 0, 0, 0.15); /* Enhanced shadow for depth */
              width: 100%;
              max-width: 42rem; /* Default max-width, can be overridden by responsive classes */
         }
@@ -55,7 +61,7 @@
             border: 1px solid #e5e7eb; /* Tailwind gray-200 */
             border-radius: 0.375rem; /* Tailwind rounded-md */
             padding: 1rem;
-            background-color: #f9fafb; /* Tailwind gray-50 */
+            background-color: rgba(249, 250, 251, 0.9); /* Tailwind gray-50 with slight transparency */
             display: flex; /* Use flex for better alignment */
             flex-direction: column; /* Stack image and details vertically on small screens */
             gap: 0.75rem; /* Space between elements */
@@ -79,6 +85,7 @@
             border-radius: 0.25rem;
             overflow: hidden; /* Ensure image is contained */
             margin-bottom: 0.5rem; /* Space below image on small screens */
+            background-color: rgba(255, 255, 255, 0.7); /* Ensure image background is not fully transparent if image fails */
         }
          @media (min-width: 768px) { /* md breakpoint */
             .result-item-image-container {
@@ -106,7 +113,7 @@
             display: inline-block;
             width: 6rem; /* Adjusted label width */
              font-weight: 600; /* semibold */
-             color: #4b5563; /* gray-600 */
+             color: #374151; /* Darker gray for labels for better contrast on semi-transparent bg */
         }
         /* Grid for multiple results */
         #resultsList.grid-view {
@@ -130,10 +137,10 @@
             text-align: center;
             padding: 1rem 0;
             margin-top: 2rem;
-            color: #6b7280;
+            color: #e5e7eb; /* Lighter text for better contrast on dark image */
             font-size: 0.875rem;
-            border-top: 1px solid #e5e7eb;
-            background-color: #f9fafb;
+            /* background-color: rgba(0, 0, 0, 0.3); Optional subtle background for footer */
+            text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.7); /* Text shadow for readability */
         }
         /* Style select dropdown */
         select {
@@ -143,6 +150,20 @@
             background-position: right 0.5rem center;
             background-size: 1.5em 1.5em;
             padding-right: 2.5rem;
+        }
+
+        /* Ensure text inside the card has good contrast */
+        .card h1, .card label, .card span, .card p, .card strong, #resultsTitle {
+            color: #1f2937; /* Tailwind gray-800 or similar dark color for text */
+        }
+         .card #searchLabel, .card label[for="searchType"] {
+            color: #374151; /* Slightly lighter dark gray */
+        }
+        .result-item p, .result-item span {
+             color: #1f2937;
+        }
+         .result-item strong {
+             color: #374151;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -157,11 +178,11 @@
                  <img src="https://i.imgur.com/5aUGEV3.png" alt="Brand Logo" class="h-20 w-auto rounded-md" onerror="this.style.display='none'">
             </div>
 
-            <h1 class="text-3xl font-bold mb-8 text-center text-gray-800">Item Lookup</h1>
+            <h1 class="text-3xl font-bold mb-8 text-center">Item Lookup</h1>
 
             <div class="flex flex-col md:flex-row md:gap-4 mb-6 items-end">
                 <div class="flex-grow mb-4 md:mb-0">
-                    <label for="searchType" class="block text-sm font-medium text-gray-700 mb-1">Search By:</label>
+                    <label for="searchType" class="block text-sm font-medium mb-1">Search By:</label>
                     <select id="searchType" name="searchType" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
                         <option value="upc" selected>UPC</option>
                         <option value="sku">SKU</option>
@@ -171,7 +192,7 @@
                 </div>
 
                 <div class="flex-grow-[2] mb-4 md:mb-0"> 
-                    <label for="searchInput" id="searchLabel" class="block text-sm font-medium text-gray-700 mb-1">Enter UPC:</label>
+                    <label for="searchInput" id="searchLabel" class="block text-sm font-medium mb-1">Enter UPC:</label>
                     <input type="text" id="searchInput" name="term" placeholder="Enter search term" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                 </div>
 
@@ -187,7 +208,7 @@
             </div>
 
             <div id="resultsContainer" class="hidden mt-8"> 
-                 <h2 id="resultsTitle" class="text-2xl font-semibold text-gray-700 border-b pb-3 mb-6">Item Details</h2>
+                 <h2 id="resultsTitle" class="text-2xl font-semibold border-b pb-3 mb-6">Item Details</h2>
                  
                  <div id="resultsList"></div>
             </div>
@@ -196,14 +217,14 @@
 
         </div> 
     </div> 
-    <footer class="text-center text-gray-500 text-sm">
+    <footer class="text-center text-sm">
         Created and Powered by Dom B.
     </footer>
 
     <script>
         // --- Configuration ---
         // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9DC2aWKQrP5wXBigS5Zaq3Q-o6Geb-ttDeT4Fgay6q8zfByh34h81GvpZbGgh6Ipm/exec'; // Replace with your actual URL
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'; // Replace with your actual URL
         const PLACEHOLDER_IMAGE = 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
         // --- End Configuration ---
 
