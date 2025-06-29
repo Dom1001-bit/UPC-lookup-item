@@ -498,9 +498,17 @@
             showSkeletonLoaders();
             searchHistoryContainer.classList.add('hidden');
             try {
-                const url = new URL(SCRIPT_URL);
-                Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
-                const response = await fetch(url, { method: 'GET', mode: 'cors', redirect: 'follow' });
+                // ** SWITCHING TO POST METHOD TO FIX CORS **
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8', // Required for Apps Script POST
+                    },
+                    body: JSON.stringify(params) // Send parameters in the body
+                });
+
                 if (!response.ok) throw new Error(`Network error: ${response.status} ${response.statusText}`);
                 const result = await response.json();
                 if (result.status === 'error') throw new Error(result.message);
@@ -578,196 +586,3 @@
     </script>
 </body>
 </html>
-```
-And here is the updated Google Apps Script with the new column configuration.
-
-
-```javascript
-/**
- * Handles GET requests. Routes requests based on 'action' parameter.
- * action='search': Performs a specific search.
- * action='catalog': Returns a paginated list of all items.
- */
-function doGet(e) {
-  const action = e.parameter.action || 'search';
-  
-  if (action === 'search') {
-    return handleSearch(e);
-  } else if (action === 'catalog') {
-    return handleCatalog(e);
-  } else {
-    return createJsonResponse({ status: 'error', message: 'Invalid action parameter.' });
-  }
-}
-
-/**
- * Creates a standard JSON response with CORS headers.
- */
-function createJsonResponse(data) {
-  const jsonOutput = JSON.stringify(data);
-  let textOutput = ContentService.createTextOutput(jsonOutput);
-  textOutput.setMimeType(ContentService.MimeType.JSON);
-  textOutput.setHeader('Access-Control-Allow-Origin', '*');
-  return textOutput;
-}
-
-// --- Configuration (Shared by both handlers) ---
-const SHEET_ID = '1AqhYin392_HGRPmRPcPuVdVLf-bJ9tqqdf8zd7xUwxs';
-const SHEET_NAME = 'Database';
-// ** UPDATED COLUMN CONFIGURATION **
-const IMAGE_URL_COLUMN = 2;    // Column B
-const UPC_COLUMN = 6;         // Column F
-const SKU_COLUMN = 7;         // Column G
-const SOURCES_COLUMN = 8;     // Column H
-const ITEM_NAME_COLUMN = 9;   // Column I
-const BRAND_COLUMN = 15;      // Column O
-const STOCKS_COLUMN = 22;     // Column V
-const PRICE_COLUMN = 28;      // Column AB
-const MSRP_COLUMN = 29;       // Column AC
-
-/**
- * Gets all data from the sheet. Caches the result for performance.
- * This version is more robust against errors.
- */
-function getSheetData() {
-  const cache = CacheService.getScriptCache();
-  const cacheKey = 'full_catalog_data_v4'; // Use a new key if structure changes
-  let cachedData = cache.get(cacheKey);
-
-  if (cachedData) {
-    Logger.log('Cache HIT for full catalog data.');
-    return JSON.parse(cachedData);
-  }
-
-  Logger.log('Cache MISS for full catalog data. Reading from sheet.');
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
-  const lastRow = sheet.getLastRow();
-
-  // Handle empty or header-only sheets to prevent errors.
-  if (lastRow < 2) {
-      Logger.log('Sheet has no data rows. Returning empty array.');
-      return []; 
-  }
-
-  // Get values from row 2 to the end
-  const data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
-  
-  // Wrap caching in a try-catch in case data is too large for cache.
-  try {
-    // Store in cache for 1 hour. Cache limit is 100KB.
-    cache.put(cacheKey, JSON.stringify(data), 3600); 
-    Logger.log('Successfully stored full catalog data in cache.');
-  } catch (e) {
-    Logger.log(`Could not cache sheet data, likely because it exceeds the 100KB cache limit. Error: ${e.message}`);
-  }
-
-  return data;
-}
-
-/**
- * Transforms a sheet row array into a structured item object.
- */
-function mapRowToItem(row) {
-    return {
-      upc: row[UPC_COLUMN - 1],
-      itemName: row[ITEM_NAME_COLUMN - 1],
-      sku: row[SKU_COLUMN - 1],
-      brand: row[BRAND_COLUMN - 1],
-      sources: row[SOURCES_COLUMN - 1],
-      stocks: row[STOCKS_COLUMN - 1],
-      price: row[PRICE_COLUMN - 1],
-      msrp: row[MSRP_COLUMN - 1],
-      imageUrl: row[IMAGE_URL_COLUMN - 1]
-    };
-}
-
-
-/**
- * Handles the 'catalog' action for pagination.
- */
-function handleCatalog(e) {
-  try {
-    const page = parseInt(e.parameter.page, 10) || 1;
-    const pageSize = parseInt(e.parameter.pageSize, 10) || 12;
-    
-    const allData = getSheetData();
-    const totalItems = allData.length;
-    
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    
-    const pageData = allData.slice(startIndex, endIndex);
-    const paginatedItems = pageData.map(mapRowToItem);
-    
-    const response = {
-      status: 'success',
-      data: paginatedItems,
-      totalItems: totalItems,
-      page: page,
-      pageSize: pageSize
-    };
-    return createJsonResponse(response);
-
-  } catch(error) {
-    Logger.log(`Error in handleCatalog: ${error.message}`);
-    return createJsonResponse({ status: 'error', message: `Server error: ${error.message}` });
-  }
-}
-
-/**
- * Handles the 'search' action.
- */
-function handleSearch(e) {
-  let response = { status: 'error', message: 'An unknown error occurred.', data: null };
-  try {
-    const searchType = e.parameter.type ? String(e.parameter.type).toLowerCase() : null;
-    const searchTerm = e.parameter.term ? String(e.parameter.term).trim() : null;
-
-    if (!searchType || !searchTerm) {
-      response.message = 'Missing search type or term parameter.';
-      return createJsonResponse(response);
-    }
-
-    const allData = getSheetData();
-    const searchTermLower = searchTerm.toLowerCase();
-    let searchColumnIndex;
-    let isPartialMatch = false;
-
-    switch (searchType) {
-        case 'upc': searchColumnIndex = UPC_COLUMN - 1; break;
-        case 'sku': searchColumnIndex = SKU_COLUMN - 1; break;
-        case 'itemname': searchColumnIndex = ITEM_NAME_COLUMN - 1; isPartialMatch = true; break;
-        case 'brand': searchColumnIndex = BRAND_COLUMN - 1; isPartialMatch = false; break;
-        default: throw new Error('Invalid search type.');
-    }
-
-    const foundItems = allData.filter(row => {
-        // Ensure the row has enough columns before trying to access an index
-        if (row.length > searchColumnIndex) {
-            const cellValue = row[searchColumnIndex] ? String(row[searchColumnIndex]).trim().toLowerCase() : "";
-            if (isPartialMatch) {
-                return cellValue.includes(searchTermLower);
-            }
-            return cellValue === searchTermLower;
-        }
-        return false;
-    }).map(mapRowToItem);
-
-    if (foundItems.length > 0) {
-      response.status = 'success';
-      // For UPC/SKU, return single object. For others, return array.
-      response.data = (searchType === 'upc' || searchType === 'sku') ? foundItems[0] : foundItems;
-      response.message = `Found ${foundItems.length} item(s).`;
-    } else {
-      response.status = 'not_found';
-      response.message = `No items found.`;
-      response.data = (searchType === 'brand' || searchType === 'itemname') ? [] : null;
-    }
-    
-    return createJsonResponse(response);
-
-  } catch(error) {
-    Logger.log(`Error in handleSearch: ${error.message}`);
-    return createJsonResponse({ status: 'error', message: `Server error: ${error.message}` });
-  }
-}
