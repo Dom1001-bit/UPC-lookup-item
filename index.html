@@ -6,215 +6,229 @@
     <title>Item Lookup</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles */
+        /* CSS Variables for Theming */
+        :root {
+            --bg-color: url('https://i.imgur.com/U0uJiPi.png');
+            --card-bg-color: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --result-item-bg: rgba(249, 250, 251, 0.9);
+            --footer-text-color: #e5e7eb;
+            --footer-text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.7);
+        }
+
+        body.dark {
+            --card-bg-color: rgba(31, 41, 55, 0.92); /* gray-800 */
+            --text-primary: #f9fafb; /* gray-50 */
+            --text-secondary: #d1d5db; /* gray-300 */
+            --text-muted: #9ca3af; /* gray-400 */
+            --border-color: #4b5563; /* gray-600 */
+            --result-item-bg: rgba(55, 65, 81, 0.9); /* gray-700 */
+            --footer-text-color: #d1d5db;
+            --footer-text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Base Styles */
         body {
             font-family: 'Inter', sans-serif;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
             margin: 0;
-            /* Background Image Styles */
-            background-image: url('https://i.imgur.com/U0uJiPi.png');
-            background-size: cover; /* Cover the entire page */
-            background-position: center center; /* Center the image */
-            background-repeat: no-repeat; /* Do not repeat the image */
-            background-attachment: fixed; /* Keep the background fixed during scroll */
+            background-image: var(--bg-color);
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            transition: background-color 0.3s ease;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        /* Animations */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
         }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #3b82f6; /* Blue spinner */
-            animation: spin 1s linear infinite;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Components */
         .main-content {
             flex-grow: 1;
             display: flex;
-            /* align-items: center; Remove vertical centering to allow content to flow from top */
-            justify-content: center; /* Center horizontally */
+            justify-content: center;
             width: 100%;
-            padding: 1rem md:2rem; /* More padding on medium screens and up */
+            padding: 1rem 2rem;
             box-sizing: border-box;
         }
         .card {
-             /* Semi-transparent white background for overlay effect */
-             background-color: rgba(255, 255, 255, 0.95); /* 95% opacity white */
+             background-color: var(--card-bg-color);
              padding: 1.5rem 2rem;
-             border-radius: 0.5rem;
-             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 20px 40px -10px rgba(0, 0, 0, 0.15); /* Enhanced shadow for depth */
+             border-radius: 0.75rem; /* Slightly more rounded */
+             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 20px 40px -10px rgba(0, 0, 0, 0.15);
              width: 100%;
-             max-width: 42rem; /* Default max-width, can be overridden by responsive classes */
+             max-width: 42rem;
+             border: 1px solid var(--border-color);
+             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-        /* Responsive card width for desktop */
-        @media (min-width: 1024px) { /* lg breakpoint */
-            .card {
-                max-width: 64rem; /* Wider card on large screens */
-            }
+        @media (min-width: 1024px) { .card { max-width: 64rem; } }
+        
+        /* Interactive Elements & Transitions */
+        .lookup-button {
+            transition: transform 0.2s ease, background-color 0.2s ease;
         }
-
-        /* Result item card styling */
+        .lookup-button:hover:not(:disabled) {
+            transform: scale(1.02);
+        }
+        .lookup-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
         .result-item {
-            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
-            border-radius: 0.375rem; /* Tailwind rounded-md */
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
             padding: 1rem;
-            background-color: rgba(249, 250, 251, 0.9); /* Tailwind gray-50 with slight transparency */
-            display: flex; /* Use flex for better alignment */
-            flex-direction: column; /* Stack image and details vertically on small screens */
-            gap: 0.75rem; /* Space between elements */
-        }
-
-        @media (min-width: 768px) { /* md breakpoint */
-            .result-item {
-                flex-direction: row; /* Image and details side-by-side on medium screens and up */
-                align-items: flex-start; /* Align items to the top */
-            }
-        }
-
-        .result-item-image-container {
-            flex-shrink: 0; /* Prevent image container from shrinking */
-            width: 100px; /* Fixed width for image container */
-            height: 100px; /* Fixed height for image container */
+            background-color: var(--result-item-bg);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e5e7eb;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .result-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        #resultsContainer.fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        /* Skeleton Loader */
+        .skeleton-card {
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 1rem;
+            background-color: var(--result-item-bg);
+            display: flex;
+            gap: 1rem;
+        }
+        .skeleton-img {
+            flex-shrink: 0;
+            width: 100px;
+            height: 100px;
+            background-color: var(--text-muted);
+            opacity: 0.3;
             border-radius: 0.25rem;
-            overflow: hidden; /* Ensure image is contained */
-            margin-bottom: 0.5rem; /* Space below image on small screens */
-            background-color: rgba(255, 255, 255, 0.7); /* Ensure image background is not fully transparent if image fails */
         }
-         @media (min-width: 768px) { /* md breakpoint */
-            .result-item-image-container {
-                margin-right: 1rem; /* Space to the right of image on larger screens */
-                margin-bottom: 0;
-            }
+        .skeleton-text-group {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.75rem;
         }
-
-        .result-item img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+        .skeleton-text {
+            height: 1rem;
+            background-color: var(--text-muted);
+            opacity: 0.3;
+            border-radius: 0.25rem;
         }
-
-        .result-item-details {
-            flex-grow: 1; /* Allow details section to take remaining space */
-        }
-
-        .result-item p {
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem; /* text-sm */
-            line-height: 1.25rem; /* leading-snug */
-        }
-        .result-item strong {
-            display: inline-block;
-            width: 6rem; /* Adjusted label width */
-             font-weight: 600; /* semibold */
-             color: #374151; /* Darker gray for labels for better contrast on semi-transparent bg */
-        }
-        /* Grid for multiple results */
-        #resultsList.grid-view {
-            display: grid;
-            grid-template-columns: repeat(1, minmax(0, 1fr)); /* 1 column by default */
-            gap: 1rem; /* Space between grid items */
-        }
-        @media (min-width: 768px) { /* md breakpoint */
-            #resultsList.grid-view {
-                grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 columns on medium screens */
-            }
-        }
-        @media (min-width: 1280px) { /* xl breakpoint */
-             #resultsList.grid-view {
-                grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 columns on extra large screens */
-            }
+        .shimmer {
+            animation: shimmer 2s infinite linear;
+            background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+            background-size: 2000px 100%;
         }
 
+        /* Other Styles */
         footer {
-            width: 100%;
-            text-align: center;
-            padding: 1rem 0;
-            margin-top: 2rem;
-            color: #e5e7eb; /* Lighter text for better contrast on dark image */
-            font-size: 0.875rem;
-            /* background-color: rgba(0, 0, 0, 0.3); Optional subtle background for footer */
-            text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.7); /* Text shadow for readability */
+            width: 100%; text-align: center; padding: 1rem 0; margin-top: 2rem;
+            color: var(--footer-text-color); font-size: 0.875rem;
+            text-shadow: var(--footer-text-shadow);
         }
-        /* Style select dropdown */
         select {
             appearance: none;
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22%236b7280%22%3E%3Cpath%20d%3D%22M5.293%207.293a1%201%200%200%201%201.414%200L10%2010.586l3.293-3.293a1%201%200%201%201%201.414%201.414l-4%204a1%201%200%200%201-1.414%200l-4-4a1%201%200%200%201%200-1.414z%22%2F%3E%3C%2Fsvg%3E');
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
+            background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem;
+        }
+        body.dark select {
+             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22%23d1d5db%22%3E%3Cpath%20d%3D%22M5.293%207.293a1%201%200%200%201%201.414%200L10%2010.586l3.293-3.293a1%201%200%201%201%201.414%201.414l-4%204a1%201%200%200%201-1.414%200l-4-4a1%201%200%200%201%200-1.414z%22%2F%3E%3C%2Fsvg%3E');
         }
 
-        /* Ensure text inside the card has good contrast */
-        .card h1, .card label, .card span, .card p, .card strong, #resultsTitle {
-            color: #1f2937; /* Tailwind gray-800 or similar dark color for text */
+        /* Result Item Styles (Duplicated from previous version, just ensure they use CSS vars) */
+        @media (min-width: 768px) { .result-item { flex-direction: row; align-items: flex-start; } }
+        .result-item-image-container { flex-shrink: 0; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 0.25rem; overflow: hidden; margin-bottom: 0.5rem; background-color: rgba(255, 255, 255, 0.7); }
+        @media (min-width: 768px) { .result-item-image-container { margin-right: 1rem; margin-bottom: 0; } }
+        .result-item img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .result-item-details { flex-grow: 1; }
+        .result-item p { margin-bottom: 0.25rem; font-size: 0.875rem; line-height: 1.25rem; color: var(--text-secondary); }
+        .result-item strong { display: inline-block; width: 6rem; font-weight: 600; color: var(--text-primary); }
+        #resultsList.grid-view { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 1rem; }
+        @media (min-width: 768px) { #resultsList.grid-view { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1280px) { #resultsList.grid-view { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+        /* Theming for text inside card */
+        .card h1, .card #resultsTitle, #messageArea { color: var(--text-primary); }
+        .card label { color: var(--text-secondary); }
+        .card input, .card select {
+            color: var(--text-primary);
+            background-color: var(--result-item-bg);
+            border-color: var(--border-color);
         }
-         .card #searchLabel, .card label[for="searchType"] {
-            color: #374151; /* Slightly lighter dark gray */
-        }
-        .result-item p, .result-item span {
-             color: #1f2937;
-        }
-         .result-item strong {
-             color: #374151;
-        }
+        .card input::placeholder { color: var(--text-muted); }
+        .button-spinner { width: 20px; height: 20px; border-left-color: white; animation: spin 1s linear infinite; display: inline-block; margin-right: 0.5rem; border-width: 2px; }
+
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
+<body>
 
     <div class="main-content">
         <div class="card lg:max-w-3xl xl:max-w-5xl"> 
-            <div class="flex justify-center mb-6">
-                 <img src="https://i.imgur.com/GQya5pg.png" alt="Brand Logo" class="h-20 w-auto rounded-md" onerror="this.style.display='none'">
+            <!-- Header with Logo and Theme Toggle -->
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex-shrink-0">
+                    <img src="https://i.imgur.com/GQya5pg.png" alt="Brand Logo" class="h-16 md:h-20 w-auto rounded-md" onerror="this.style.display='none'">
+                </div>
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" type="button" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700" aria-label="Toggle dark mode">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
             </div>
-
+            
             <h1 class="text-3xl font-bold mb-8 text-center">Item Lookup</h1>
 
             <div class="flex flex-col md:flex-row md:gap-4 mb-6 items-end">
                 <div class="flex-grow mb-4 md:mb-0">
                     <label for="searchType" class="block text-sm font-medium mb-1">Search By:</label>
-                    <select id="searchType" name="searchType" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <select id="searchType" name="searchType" class="w-full px-4 py-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
                         <option value="upc" selected>UPC</option>
                         <option value="sku">SKU</option>
                         <option value="itemName">Item Name</option>
                         <option value="brand">Brand</option>
                     </select>
                 </div>
-
                 <div class="flex-grow-[2] mb-4 md:mb-0"> 
                     <label for="searchInput" id="searchLabel" class="block text-sm font-medium mb-1">Enter UPC:</label>
-                    <input type="text" id="searchInput" name="term" placeholder="Enter search term" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    <input type="text" id="searchInput" name="term" placeholder="Enter search term" class="w-full px-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
                 </div>
-
-                <button id="lookupButton" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Lookup Item
+                <button id="lookupButton" class="lookup-button w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md flex items-center justify-center">
+                    <span id="button-text">Lookup Item</span>
+                    <span id="button-spinner" class="hidden button-spinner"></span>
                 </button>
             </div>
-
-
-            <div id="loadingIndicator" class="hidden flex justify-center items-center my-8"> 
-                <div class="spinner"></div>
-                <span class="ml-3 text-gray-600 text-lg">Looking up item...</span>
-            </div>
-
+            
             <div id="resultsContainer" class="hidden mt-8"> 
                  <h2 id="resultsTitle" class="text-2xl font-semibold border-b pb-3 mb-6">Item Details</h2>
-                 
                  <div id="resultsList"></div>
             </div>
 
             <div id="messageArea" class="mt-6 text-center"></div>
-
         </div> 
     </div> 
     <footer class="text-center text-sm">
@@ -223,54 +237,106 @@
 
     <script>
         // --- Configuration ---
-        // !!! IMPORTANT: Replace this URL with the one you get after deploying the Google Apps Script !!!
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9DC2aWKQrP5wXBigS5Zaq3Q-o6Geb-ttDeT4Fgay6q8zfByh34h81GvpZbGgh6Ipm/exec'; // Replace with your actual URL
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'; 
         const PLACEHOLDER_IMAGE = 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
-        // --- End Configuration ---
-
+        
         // --- DOM Element References ---
         const searchTypeSelect = document.getElementById('searchType');
         const searchInput = document.getElementById('searchInput');
         const searchLabel = document.getElementById('searchLabel');
         const lookupButton = document.getElementById('lookupButton');
+        const buttonText = document.getElementById('button-text');
+        const buttonSpinner = document.getElementById('button-spinner');
         const resultsContainer = document.getElementById('resultsContainer');
         const resultsList = document.getElementById('resultsList');
         const resultsTitle = document.getElementById('resultsTitle');
         const messageArea = document.getElementById('messageArea');
-        const loadingIndicator = document.getElementById('loadingIndicator');
 
+        // --- Dark Theme Elements & Logic ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Check for saved theme preference or system preference
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            themeToggleLightIcon.classList.remove('hidden');
+            document.body.classList.add('dark');
+        } else {
+            themeToggleDarkIcon.classList.remove('hidden');
+            document.body.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+            if (localStorage.getItem('color-theme')) {
+                if (localStorage.getItem('color-theme') === 'light') {
+                    document.body.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                } else {
+                    document.body.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                }
+            } else {
+                if (document.body.classList.contains('dark')) {
+                    document.body.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.body.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            }
+        });
+        
         /**
-         * Updates the search input label and placeholder based on selected type.
+         * Creates HTML for a single skeleton loader item.
          */
+        function createSkeletonItemHTML() {
+            return `
+                <div class="skeleton-card">
+                    <div class="skeleton-img shimmer"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton-text w-3/4 shimmer"></div>
+                        <div class="skeleton-text w-1/2 shimmer"></div>
+                        <div class="skeleton-text w-5/6 shimmer"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showSkeletonLoaders(count = 3) {
+            resultsList.innerHTML = '';
+            resultsList.classList.add('grid-view'); // Use grid for skeletons
+            for (let i = 0; i < count; i++) {
+                resultsList.innerHTML += createSkeletonItemHTML();
+            }
+            resultsTitle.textContent = 'Searching...';
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.classList.remove('fade-in');
+        }
+
         function updateSearchLabel() {
-            const selectedType = searchTypeSelect.options[searchTypeSelect.selectedIndex].text; // Get display text
+            const selectedType = searchTypeSelect.options[searchTypeSelect.selectedIndex].text;
             searchLabel.textContent = `Enter ${selectedType}:`;
             searchInput.placeholder = `Enter ${selectedType}`;
         }
 
-        /**
-         * Creates HTML for a single result item.
-         * @param {object} itemData - The data for one item.
-         * @returns {string} HTML string for the item.
-         */
         function createResultItemHTML(itemData) {
             const imageUrl = itemData.imageUrl || PLACEHOLDER_IMAGE;
             const imageAlt = itemData.itemName || 'Item Image';
-            // Use 'N/A' as fallback for potentially missing data
             const itemName = itemData.itemName || 'N/A';
             const sku = itemData.sku || 'N/A';
             const brand = itemData.brand || 'N/A';
             const sources = itemData.sources || 'N/A';
             const stocks = itemData.stocks !== undefined && itemData.stocks !== null ? itemData.stocks : 'N/A';
-            const price = itemData.price !== undefined && itemData.price !== null ? itemData.price : 'N/A'; // Cost Price
+            const price = itemData.price !== undefined && itemData.price !== null ? itemData.price : 'N/A';
             const msrp = itemData.msrp !== undefined && itemData.msrp !== null ? itemData.msrp : 'N/A';
             const upc = itemData.upc || 'N/A';
 
-            // Use template literals for easier HTML construction
             return `
                 <div class="result-item">
                     <div class="result-item-image-container">
-                        <img src="${imageUrl}" alt="${imageAlt}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
+                        <img src="${imageUrl}" alt="${imageAlt}" loading="lazy" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
                     </div>
                     <div class="result-item-details">
                         <p><strong>Name:</strong> ${itemName}</p>
@@ -286,124 +352,104 @@
             `;
         }
 
-        /**
-         * Displays the fetched item data in the HTML. Handles single or multiple results.
-         * @param {object | object[]} data - The data object or array of data objects.
-         */
         function displayResults(data) {
-            console.log("Received data from script:", data);
-            resultsList.innerHTML = ''; // Clear previous results
-            resultsList.classList.remove('grid-view'); // Remove grid class initially
+            resultsList.innerHTML = '';
+            resultsList.classList.remove('grid-view');
+            resultsContainer.classList.add('fade-in'); // Add fade-in animation class
 
             if (Array.isArray(data) && data.length > 0) {
-                // Multiple results (likely from Brand or Item Name search)
                 resultsTitle.textContent = `Found ${data.length} Item(s)`;
                 data.forEach(item => {
                     resultsList.innerHTML += createResultItemHTML(item);
                 });
-                if (data.length > 1) { // Apply grid view only if more than one item
+                if (data.length > 1) {
                     resultsList.classList.add('grid-view');
                 }
             } else if (!Array.isArray(data) && data) {
-                 // Single result
                  resultsTitle.textContent = 'Item Details';
                  resultsList.innerHTML = createResultItemHTML(data);
             } else {
-                // Should not happen if status is success, but handle defensively
                  showMessage('Received success status but no data or empty array.', true);
-                 return; // Don't show the results container
+                 resultsContainer.classList.add('hidden');
+                 return;
             }
-
-            resultsContainer.classList.remove('hidden'); // Show the results section
+            resultsContainer.classList.remove('hidden');
         }
 
-        /**
-         * Displays status messages (e.g., errors, item not found) in the message area.
-         * @param {string} message - The message text to display.
-         * @param {boolean} [isError=false] - If true, styles the message as an error.
-         */
         function showMessage(message, isError = false) {
             messageArea.textContent = message;
-            messageArea.className = `mt-6 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border border-yellow-200'}`; // Added borders
+            messageArea.className = `mt-6 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border border-yellow-200'}`;
         }
 
-        /**
-         * Clears previous results, messages, and resets the UI to its initial state.
-         */
         function clearOutput() {
-            resultsContainer.classList.add('hidden'); // Hide results section
-            resultsList.innerHTML = ''; // Clear results list
-            resultsList.classList.remove('grid-view'); // Ensure grid class is removed
-            messageArea.textContent = ''; // Clear message text
-            messageArea.className = 'mt-6 text-center'; // Reset message area class
+            resultsContainer.classList.add('hidden');
+            resultsList.innerHTML = '';
+            resultsList.classList.remove('grid-view');
+            messageArea.textContent = '';
+            messageArea.className = 'mt-6 text-center';
+        }
+        
+        function setButtonLoadingState(isLoading) {
+            if (isLoading) {
+                lookupButton.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonSpinner.classList.remove('hidden');
+            } else {
+                lookupButton.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonSpinner.classList.add('hidden');
+            }
         }
 
-        /**
-         * Handles the item lookup process when the button is clicked.
-         */
         async function handleLookup() {
             const searchTerm = searchInput.value.trim();
             const searchType = searchTypeSelect.value;
-
             if (!searchTerm) {
                 showMessage(`Please enter a ${searchTypeSelect.options[searchTypeSelect.selectedIndex].text}.`, true);
                 return;
             }
-
             if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
                  showMessage('Configuration Error: Google Apps Script URL is missing in the HTML.', true);
                  return;
             }
 
             clearOutput();
-            loadingIndicator.classList.remove('hidden');
-            lookupButton.disabled = true;
+            setButtonLoadingState(true);
+            showSkeletonLoaders(); // Show skeleton loaders instead of the old spinner
 
             try {
-                // Construct the URL with search term and type as query parameters
                 const lookupUrl = `${SCRIPT_URL}?type=${encodeURIComponent(searchType)}&term=${encodeURIComponent(searchTerm)}`;
-                console.log("Fetching from URL:", lookupUrl);
-
-                const response = await fetch(lookupUrl, {
-                    method: 'GET',
-                    mode: 'cors',
-                    redirect: 'follow'
-                });
-
-                console.log("Fetch response status:", response.status);
+                const response = await fetch(lookupUrl, { method: 'GET', mode: 'cors', redirect: 'follow' });
 
                 if (!response.ok) {
-                    let errorText = `Network response was not ok (status: ${response.status} ${response.statusText})`;
-                    try {
-                        const errorBody = await response.text();
-                        console.error("Fetch error response body:", errorBody);
-                        errorText += `: ${errorBody.substring(0, 100)}`; // Add snippet of body
-                    } catch (bodyError) { /* Ignore */ }
+                    let errorText = `Network error: ${response.status} ${response.statusText}`;
                     throw new Error(errorText);
                 }
 
                 const result = await response.json();
-                console.log("Parsed fetch result:", result);
 
                 if (result.status === 'success' && result.data) {
-                    // Check if data is an empty array (possible for brand/item name search with no results)
                     if (Array.isArray(result.data) && result.data.length === 0) {
-                         showMessage(`No items found matching the ${searchTypeSelect.options[searchTypeSelect.selectedIndex].text} '${searchTerm}'.`, false); // Use non-error style
+                         showMessage(`No items found for '${searchTerm}'.`, false);
+                         resultsContainer.classList.add('hidden');
                     } else {
-                        displayResults(result.data); // Display single or multiple results
+                        displayResults(result.data);
                     }
                 } else if (result.status === 'not_found') {
-                    showMessage(`No items found matching the ${searchTypeSelect.options[searchTypeSelect.selectedIndex].text} '${searchTerm}'.`, false); // Use non-error style
+                    showMessage(`No items found for '${searchTerm}'.`, false);
+                    resultsContainer.classList.add('hidden');
                 } else {
-                    showMessage(result.message || 'An unknown error occurred during lookup.', true);
+                    showMessage(result.message || 'An unknown error occurred.', true);
+                    resultsContainer.classList.add('hidden');
                 }
 
             } catch (error) {
                 console.error('Lookup Error:', error);
-                showMessage(`Failed to fetch data. Error: ${error.message}`, true);
+                showMessage(`Failed to fetch data. Please check your connection or the script URL.`, true);
+                resultsContainer.classList.add('hidden');
+                
             } finally {
-                loadingIndicator.classList.add('hidden');
-                lookupButton.disabled = false;
+                setButtonLoadingState(false);
             }
         }
 
@@ -418,8 +464,8 @@
         });
 
         // --- Initial Setup ---
-        updateSearchLabel(); // Set initial label
-        clearOutput(); // Clear any potential initial state issues
+        updateSearchLabel();
+        clearOutput();
 
     </script>
 
