@@ -246,14 +246,10 @@
         // --- Configuration & State Management ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9DC2aWKQrP5wXBigS5Zaq3Q-o6Geb-ttDeT4Fgay6q8zfByh34h81GvpZbGgh6Ipm/exec'; 
         const PLACEHOLDER_IMAGE = 'https://placehold.co/150x150/e2e8f0/94a3b8?text=No+Image';
-        const CATALOG_PAGE_SIZE = 12; // Number of items per page for catalog view
+        const CATALOG_PAGE_SIZE = 12;
         const appState = {
-            currentResults: [],
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 0,
-            currentSort: 'name_asc',
-            currentView: 'search', // 'search' or 'catalog'
+            currentResults: [], currentPage: 1, totalPages: 1, totalItems: 0,
+            currentSort: 'name_asc', currentView: 'search',
             searchHistory: JSON.parse(localStorage.getItem('itemSearchHistory')) || []
         };
 
@@ -279,9 +275,41 @@
         const modalCloseBtn = document.getElementById('modal-close-button');
         const modalContent = document.getElementById('modal-content');
 
-        // --- Initialization ---
+        // --- Helper & UI Functions (Defined Before Use) ---
+
+        function showMessage(message, isError = false) {
+            messageArea.textContent = message;
+            messageArea.className = `mt-6 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border-yellow-200'}`;
+        }
+        
+        function clearOutput() {
+            resultsContainer.classList.add('hidden');
+            resultsList.innerHTML = '';
+            paginationControls.innerHTML = '';
+            messageArea.textContent = '';
+            messageArea.className = 'mt-6 text-center';
+        }
+
+        function createResultItemHTML(itemData, index) {
+            const { imageUrl, itemName, sku, brand, upc } = itemData;
+            return `
+                <div class="result-item" data-index="${index}">
+                    <div class="flex-shrink-0 w-24 h-24 flex items-center justify-center bg-white rounded-md border" style="border-color: var(--border-color);">
+                        <img src="${imageUrl || PLACEHOLDER_IMAGE}" alt="${itemName || 'Item Image'}" loading="lazy" class="max-w-full max-h-full object-contain" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
+                    </div>
+                    <div class="flex-grow overflow-hidden">
+                        <p class="font-bold truncate" style="color: var(--text-primary);">${itemName || 'N/A'}</p>
+                        <p><strong>SKU:</strong> <span style="color: var(--text-secondary);">${sku || 'N/A'}</span></p>
+                        <p><strong>UPC:</strong> <span style="color: var(--text-secondary);">${upc || 'N/A'}</span></p>
+                        <p><strong>Brand:</strong> <span style="color: var(--text-secondary);">${brand || 'N/A'}</span></p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Main App Logic & Event Handlers ---
+
         function initializeApp() {
-            // Populate dropdowns
             const searchOptions = { upc: 'UPC', sku: 'SKU', itemName: 'Item Name', brand: 'Brand' };
             Object.entries(searchOptions).forEach(([value, text]) => {
                 searchTypeSelect.add(new Option(text, value));
@@ -296,17 +324,14 @@
                 sortSelect.add(new Option(text, value));
             });
 
-            // Setup Theme
             if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.body.classList.add('dark');
                 themeIcon.setAttribute('data-lucide', 'moon');
             } else {
                 themeIcon.setAttribute('data-lucide', 'sun');
             }
-            
             lucide.createIcons();
             
-            // Add Event Listeners
             themeToggleBtn.addEventListener('click', handleThemeToggle);
             searchTypeSelect.addEventListener('change', updateSearchUI);
             lookupButton.addEventListener('click', () => handleSearch());
@@ -314,7 +339,7 @@
             sortSelect.addEventListener('change', handleSort);
             searchInput.addEventListener('input', handleSearchInput);
             searchInput.addEventListener('focus', handleSearchInput);
-            document.addEventListener('click', (e) => { // Close history on outside click
+            document.addEventListener('click', (e) => {
                 if (!searchInput.contains(e.target) && !searchHistoryContainer.contains(e.target)) {
                     searchHistoryContainer.classList.add('hidden');
                 }
@@ -324,12 +349,10 @@
             modalCloseBtn.addEventListener('click', closeModal);
             searchInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { event.preventDefault(); handleSearch(); }});
             
-            // Initial UI state
             updateSearchUI();
             clearOutput();
         }
 
-        // --- Event Handlers ---
         function handleThemeToggle() {
             const isDark = document.body.classList.toggle('dark');
             localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
@@ -340,13 +363,8 @@
         function handleSearch(term, type) {
             const searchTerm = term || searchInput.value.trim();
             const searchType = type || searchTypeSelect.value;
-            if (!searchTerm) {
-                showMessage(`Please enter a search term.`, true); return;
-            }
-            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                showMessage('Configuration Error: Google Apps Script URL is missing in the HTML.', true); return;
-            }
-            
+            if (!searchTerm) { showMessage(`Please enter a search term.`, true); return; }
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') { showMessage('Configuration Error: Google Apps Script URL is missing in the HTML.', true); return; }
             appState.currentView = 'search';
             saveToSearchHistory(searchTerm, searchType);
             fetchData({ type: searchType, term: searchTerm, action: 'search' });
@@ -371,10 +389,7 @@
 
         function handleSearchInput() {
             const term = searchInput.value.trim().toLowerCase();
-            if (!term) {
-                searchHistoryContainer.classList.add('hidden');
-                return;
-            }
+            if (!term) { searchHistoryContainer.classList.add('hidden'); return; }
             const filteredHistory = appState.searchHistory.filter(item => item.term.toLowerCase().includes(term));
             renderSearchHistory(filteredHistory);
         }
@@ -382,7 +397,6 @@
         function saveToSearchHistory(term, type) {
             const existingIndex = appState.searchHistory.findIndex(item => item.term.toLowerCase() === term.toLowerCase() && item.type === type);
             if (existingIndex > -1) { appState.searchHistory.splice(existingIndex, 1); }
-            
             appState.searchHistory.unshift({ term, type });
             if (appState.searchHistory.length > 7) { appState.searchHistory.pop(); }
             localStorage.setItem('itemSearchHistory', JSON.stringify(appState.searchHistory));
@@ -396,7 +410,6 @@
             if (itemData) openModal(itemData);
         }
 
-        // --- UI Rendering ---
         function updateSearchUI() {
             const selectedType = searchTypeSelect.options[searchTypeSelect.selectedIndex].text;
             searchLabel.textContent = `Enter ${selectedType}:`;
@@ -418,37 +431,7 @@
             sortControls.classList.add('hidden');
             paginationControls.classList.add('hidden');
         }
-
-        function createSkeletonItemHTML() {
-            return `
-                <div class="skeleton-card">
-                    <div class="skeleton-img shimmer"></div>
-                    <div class="skeleton-text-group">
-                        <div class="skeleton-text w-3/4 shimmer"></div>
-                        <div class="skeleton-text w-1/2 shimmer"></div>
-                        <div class="skeleton-text w-5/6 shimmer"></div>
-                    </div>
-                </div>
-            `;
-        }
         
-        function createResultItemHTML(itemData, index) {
-            const { imageUrl, itemName, sku, brand, upc } = itemData;
-            return `
-                <div class="result-item" data-index="${index}">
-                    <div class="result-item-image-container">
-                        <img src="${imageUrl || PLACEHOLDER_IMAGE}" alt="${itemName || 'Item Image'}" loading="lazy" class="max-w-full max-h-full object-contain" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE}';">
-                    </div>
-                    <div class="flex-grow overflow-hidden">
-                        <p class="font-bold truncate" style="color: var(--text-primary);">${itemName || 'N/A'}</p>
-                        <p><strong>SKU:</strong> <span style="color: var(--text-secondary);">${sku || 'N/A'}</span></p>
-                        <p><strong>UPC:</strong> <span style="color: var(--text-secondary);">${upc || 'N/A'}</span></p>
-                        <p><strong>Brand:</strong> <span style="color: var(--text-secondary);">${brand || 'N/A'}</span></p>
-                    </div>
-                </div>
-            `;
-        }
-
         function renderResults() {
             if (appState.currentResults.length === 0) {
                  clearOutput();
@@ -495,8 +478,7 @@
                 });
             });
         }
-
-        // --- Data & Logic ---
+        
         async function fetchData(params) {
             clearOutput();
             setButtonLoadingState(true);
@@ -520,13 +502,13 @@
                     resultsContainer.classList.remove('hidden');
                     resultsContainer.classList.add('fade-in');
                 } else {
-                    showMessage(`No items found.`, false);
-                    resultsContainer.classList.add('hidden');
+                    clearOutput();
+                    showMessage(`No items found matching your query.`, false);
                 }
             } catch (error) {
                 console.error('Lookup Error:', error);
-                showMessage(`Failed to fetch data. Please check your connection or the script URL.`, true);
-                resultsContainer.classList.add('hidden');
+                clearOutput();
+                showMessage(`Failed to fetch data. Please check connection or script URL and try again.`, true);
             } finally {
                 setButtonLoadingState(false);
             }
@@ -571,22 +553,13 @@
                 </div>
             `;
             modalOverlay.classList.add('visible');
-            lucide.createIcons(); // To render the close 'x' icon if needed
+            lucide.createIcons();
         }
 
         function closeModal() {
             modalOverlay.classList.remove('visible');
         }
 
-        function clearOutput() {
-            resultsContainer.classList.add('hidden');
-            resultsList.innerHTML = '';
-            paginationControls.innerHTML = '';
-            messageArea.textContent = '';
-            messageArea.className = 'mt-6 text-center';
-        }
-
-        // --- App Start ---
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
