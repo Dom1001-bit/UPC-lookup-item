@@ -244,7 +244,7 @@
     
     <script>
         // --- Configuration & State Management ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4oyT9D6wPAZOwoQewtpwl0H5w75-o_To93xCc6PO7EyO9VWn-iF3ftdd-r2cZp8eT/exec'; 
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIkAqPXs8U_qTdOkwkNfu3cGMNKwZYtcU3nfiL8Yu46WdZS-39IydC0AHlZhnd-q8/exec'; 
         const PLACEHOLDER_IMAGE = 'https://placehold.co/150x150/e2e8f0/94a3b8?text=No+Image';
         const CATALOG_PAGE_SIZE = 12;
         const appState = {
@@ -509,7 +509,14 @@
                     body: JSON.stringify(params) // Send parameters in the body
                 });
 
-                if (!response.ok) throw new Error(`Network error: ${response.status} ${response.statusText}`);
+                if (!response.ok) {
+                    // ** IMPROVED ERROR HANDLING **
+                    let errorDetail = `Network error: ${response.status} ${response.statusText}.`;
+                    if (response.status === 0 || !response.headers.get('content-type')) {
+                        errorDetail += ' This indicates a CORS error. The Apps Script deployment is likely not serving the correct headers. Please redeploy it as a "New version".';
+                    }
+                    throw new Error(errorDetail);
+                }
                 const result = await response.json();
                 if (result.status === 'error') throw new Error(result.message);
                 
@@ -529,7 +536,7 @@
             } catch (error) {
                 console.error('Lookup Error:', error);
                 clearOutput();
-                showMessage(`Failed to fetch data. Please check connection or script URL and try again.`, true);
+                showMessage(error.message, true);
             } finally {
                 setButtonLoadingState(false);
             }
