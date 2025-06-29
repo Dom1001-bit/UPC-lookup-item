@@ -275,19 +275,24 @@
         const modalCloseBtn = document.getElementById('modal-close-button');
         const modalContent = document.getElementById('modal-content');
 
-        // --- Helper & UI Functions (Defined Before Use) ---
+        // --- Helper & UI Rendering Functions (Defined First) ---
 
         function showMessage(message, isError = false) {
             messageArea.textContent = message;
             messageArea.className = `mt-6 text-center p-3 rounded-md ${isError ? 'text-red-700 bg-red-100 border border-red-200' : 'text-yellow-700 bg-yellow-100 border-yellow-200'}`;
         }
         
-        function clearOutput() {
-            resultsContainer.classList.add('hidden');
-            resultsList.innerHTML = '';
-            paginationControls.innerHTML = '';
-            messageArea.textContent = '';
-            messageArea.className = 'mt-6 text-center';
+        function createSkeletonItemHTML() {
+            return `
+                <div class="skeleton-card">
+                    <div class="skeleton-img shimmer"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton-text w-3/4 shimmer"></div>
+                        <div class="skeleton-text w-1/2 shimmer"></div>
+                        <div class="skeleton-text w-5/6 shimmer"></div>
+                    </div>
+                </div>
+            `;
         }
 
         function createResultItemHTML(itemData, index) {
@@ -305,6 +310,30 @@
                     </div>
                 </div>
             `;
+        }
+        
+        function clearOutput() {
+            resultsContainer.classList.add('hidden');
+            resultsList.innerHTML = '';
+            paginationControls.innerHTML = '';
+            messageArea.textContent = '';
+            messageArea.className = 'mt-6 text-center';
+        }
+
+        function setButtonLoadingState(isLoading) {
+            lookupButton.disabled = isLoading;
+            buttonText.classList.toggle('hidden', isLoading);
+            buttonSpinner.classList.toggle('hidden', !isLoading);
+        }
+
+        function showSkeletonLoaders(count = 6) {
+            clearOutput();
+            resultsList.classList.add('grid-view');
+            resultsList.innerHTML = Array(count).fill('').map(createSkeletonItemHTML).join('');
+            resultsTitle.textContent = 'Searching...';
+            resultsContainer.classList.remove('hidden');
+            sortControls.classList.add('hidden');
+            paginationControls.classList.add('hidden');
         }
 
         // --- Main App Logic & Event Handlers ---
@@ -414,22 +443,6 @@
             const selectedType = searchTypeSelect.options[searchTypeSelect.selectedIndex].text;
             searchLabel.textContent = `Enter ${selectedType}:`;
             searchInput.placeholder = `Enter ${selectedType}...`;
-        }
-
-        function setButtonLoadingState(isLoading) {
-            lookupButton.disabled = isLoading;
-            buttonText.classList.toggle('hidden', isLoading);
-            buttonSpinner.classList.toggle('hidden', !isLoading);
-        }
-
-        function showSkeletonLoaders(count = 6) {
-            clearOutput();
-            resultsList.classList.add('grid-view');
-            resultsList.innerHTML = Array(count).fill('').map(createSkeletonItemHTML).join('');
-            resultsTitle.textContent = 'Searching...';
-            resultsContainer.classList.remove('hidden');
-            sortControls.classList.add('hidden');
-            paginationControls.classList.add('hidden');
         }
         
         function renderResults() {
@@ -560,6 +573,7 @@
             modalOverlay.classList.remove('visible');
         }
 
+        // --- App Start ---
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
